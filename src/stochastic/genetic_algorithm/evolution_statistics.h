@@ -108,11 +108,16 @@ public:
     for (size_t i = 0; i < _requests.size(); i++)
       if (auto req = _requests_factory->make(_requests[i]))
         _statistics(_generation, i) = (*req)(population);
+    ++_generation;
   }
   
   auto operator[](size_t statistic)
   {
-    return _statistics.block(0, statistic, _generation + 1, 1);
+    return _statistics.block(0, statistic, _generation, 1);
+  }
+  
+  F current_value(int statistic) const {
+    return _statistics(_generation - 1, statistic);
   }
   
   size_t operator++()

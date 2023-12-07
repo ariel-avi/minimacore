@@ -161,6 +161,16 @@ protected:
       }
   };
   
+  evolution_statistics<F> _statistics{
+      std::initializer_list<int>(
+          {
+              statistics_requests_factory<F>::best_fitness_stat,
+              statistics_requests_factory<F>::average_fitness_stat,
+              statistics_requests_factory<F>::selection_pressure_stat
+          }),
+      2
+  };
+  
 };
 
 using floating_point_types = ::testing::Types<long double, double, float>;
@@ -476,28 +486,77 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, selection_pressure_request)
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, evolution_statistics)
 {
-  evolution_statistics<TypeParam> stats(
-      std::initializer_list<int>{
-          statistics_requests_factory<TypeParam>::best_fitness_stat,
-          statistics_requests_factory<TypeParam>::average_fitness_stat,
-          statistics_requests_factory<TypeParam>::selection_pressure_stat
-      },
-      2
-  );
-  ASSERT_EQ(stats.current_generation(), 0);
-  stats.register_statistic(this->_population);
+  ASSERT_EQ(this->_statistics.current_generation(), 0);
+  this->_statistics.register_statistic(this->_population);
   {
-    auto best_fitness_stat = stats[statistics_requests_factory<TypeParam>::best_fitness_stat];
-    EXPECT_NEAR(best_fitness_stat(stats.current_generation(), 0), 0.7, 1E-6);
+    auto best_fitness_stat = this->_statistics[statistics_requests_factory<TypeParam>::best_fitness_stat];
+    EXPECT_NEAR(best_fitness_stat(this->_statistics.current_generation() - 1, 0), 0.7, 1E-6);
     EXPECT_EQ(best_fitness_stat.rows(), 1);
   }
-  ++stats;
-  ASSERT_EQ(stats.current_generation(), 1);
-  stats.register_statistic(this->_population);
+  ASSERT_EQ(this->_statistics.current_generation(), 1);
+  this->_statistics.register_statistic(this->_population);
   {
-    auto best_fitness_stat = stats[statistics_requests_factory<TypeParam>::best_fitness_stat];
-    EXPECT_NEAR(best_fitness_stat(stats.current_generation(), 0), 0.7, 1E-6);
+    auto best_fitness_stat = this->_statistics[statistics_requests_factory<TypeParam>::best_fitness_stat];
+    EXPECT_NEAR(best_fitness_stat(this->_statistics.current_generation() - 1, 0), 0.7, 1E-6);
     EXPECT_EQ(best_fitness_stat.rows(), 2);
+  }
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, generation_termination)
+{
+  this->_statistics.register_statistic(this->_population);
+  {
+    generation_termination<TypeParam> termination(2);
+    ASSERT_FALSE(termination(this->_statistics));
+  }
+  this->_statistics.register_statistic(this->_population);
+  {
+    generation_termination<TypeParam> termination(2);
+    ASSERT_TRUE(termination(this->_statistics));
+  }
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, best_fitness_termination)
+{
+  this->_statistics.register_statistic(this->_population);
+  {
+    best_fitness_termination<TypeParam> termination(0.);
+    ASSERT_FALSE(termination(this->_statistics));
+  }
+  {
+    best_fitness_termination<TypeParam> termination(1.);
+    ASSERT_TRUE(termination(this->_statistics));
+  }
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, average_fitness_termination)
+{
+  this->_statistics.register_statistic(this->_population);
+  {
+    average_fitness_termination<TypeParam> termination(0.);
+    ASSERT_FALSE(termination(this->_statistics));
+  }
+  {
+    average_fitness_termination<TypeParam> termination(2.1);
+    ASSERT_TRUE(termination(this->_statistics));
+  }
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, selection_pressure_termination)
+{
+  this->_statistics.register_statistic(this->_population);
+  {
+    selection_pressure_termination<TypeParam> termination(1.);
+    ASSERT_FALSE(termination(this->_statistics));
+  }
+  {
+    selection_pressure_termination<TypeParam> termination(0.1);
+    ASSERT_TRUE(termination(this->_statistics))
+                  << "Selection pressure: " << selection_pressure_request<TypeParam>{}(this->_population)
+                  << "\nAverage fitness: " << average_fitness_request<TypeParam>{}(this->_population)
+                  << "\nBest fitness: " << best_fitness_request<TypeParam>{}(this->_population)
+                  << "\nStatistics Selection pressure: "
+                  << this->_statistics.current_value(statistics_requests_factory<TypeParam>::selection_pressure_stat);
   }
 }
 

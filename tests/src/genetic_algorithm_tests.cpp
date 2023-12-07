@@ -54,8 +54,8 @@ protected:
     size_t count{0};
     for (auto& rank_i : std::ranges::reverse_view(_unique_sorted_ranks)) {
       if (count < rank_count) {
-        for (size_t i{_ranks.size() - 1}; i != 0; i--) {
-          if (_ranks[i] == rank_i) test_set.push_back(_population[i]);
+        for (size_t i{_ranks.size()}; i != 0; i--) {
+          if (_ranks[i - 1] == rank_i) test_set.push_back(_population[i - 1]);
         }
         count++;
       }
@@ -202,8 +202,23 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, truncation_selection_for_replacem
   ASSERT_EQ(this->_population.size(), 5);
 }
 
-TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement)
+TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement_by_ranks_1)
 {
   this->test_ranked_selection_for_replacement_by_ranks(1);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement_by_ranks_2)
+{
+  this->test_ranked_selection_for_replacement_by_ranks(2);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement_by_ranks_3)
+{
+  this->test_ranked_selection_for_replacement_by_ranks(3);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement_by_ranks_4)
+{
+  this->test_ranked_selection_for_replacement_by_ranks(4);
 }
 

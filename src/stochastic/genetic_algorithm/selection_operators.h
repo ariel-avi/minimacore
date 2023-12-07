@@ -85,6 +85,9 @@ private:
   size_t _selection_size{0};
 };
 
+template<floating_point_type F>
+using ranked_selection_t = vector<population_t<F>>;
+
 class ranked_selection {
 public:
   enum select_by : int {
@@ -219,8 +222,7 @@ class ranked_selection_for_replacement : public base_selection_for_replacement<F
 public:
   population_t<F>& operator()(population_t<F>& population) const override
   {
-    reproduction_selection_t<F> result;
-    vector<reproduction_selection_t<F>> ranks;
+    ranked_selection_t<F> ranks;
     while (!population.empty()) {
       auto& current_rank = ranks.emplace_back();
       for (auto& individual : population) {
@@ -231,13 +233,12 @@ public:
       });
     }
     
-    size_t i{0};
-    while (ranks.size() - i > _selection_size) {
-      auto& rank = ranks[i++];
-      std::for_each(rank.begin(),
-                    rank.end(),
-                    [&population, &rank](const auto& individual) { population.push_back(individual); });
-    }
+    for (size_t i{0}; ranks.size() - i > _selection_size;)
+      std::ranges::for_each(ranks[i++],
+                            [&population](const auto& individual) {
+                              population.push_back(individual);
+                            });
+    
     return population;
   }
   

@@ -1,1 +1,4 @@
 add_subdirectory(stochastic)
+add_library(minimacore_base_concepts INTERFACE )
+add_library(minimacore::base_concepts ALIAS minimacore_base_concepts)
+target_include_directories(minimacore_base_concepts INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})

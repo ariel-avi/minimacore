@@ -5,6 +5,7 @@ project(minimacore
         VERSION ${minimacore_VERSION}
 )
 set(CMAKE_CXX_STANDARD 20)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 include(cmake/fetchDependencies.cmake)
 add_subdirectory(src)
 add_subdirectory(tests)

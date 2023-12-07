@@ -4,13 +4,6 @@
 
 using namespace minimacore::genetic_algorithm;
 
-struct mock_data {
-  [[nodiscard]] mock_data* clone() const
-  {
-    return new mock_data(*this);
-  }
-};
-
 template<floating_point_type F>
 class minimacore_genetic_algorithm_tests : public ::testing::Test {
 protected:
@@ -52,7 +45,19 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, truncation_selection_for_reproduc
   size_t selection_size = 5;
   truncation_selection_for_reproduction<TypeParam> selection(selection_size);
   auto selected_individuals = selection(this->_population);
-  vector<TypeParam> cp(this->_fitness_values);
+  vector<TypeParam> cp(this->_fitness_values); // copying fitness values to sort them
   std::sort(cp.begin(), cp.end());
   for (size_t i = 0; i < selection_size; i++) EXPECT_EQ(selected_individuals[i]->overall_fitness(), cp[i]);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, tournament_selection_for_reproduction)
+{
+  size_t selection_size = 5;
+  size_t tournament_size = 3;
+  tournament_selection_for_reproduction<TypeParam> selection(tournament_size, selection_size);
+  vector selected_individuals = selection(this->_population);
+  ASSERT_EQ(selected_individuals.size(), selection_size);
+  for (auto& i : selected_individuals) {
+    ASSERT_NE(i, this->_population[5].get());
+  }
 }

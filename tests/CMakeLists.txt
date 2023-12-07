@@ -20,4 +20,11 @@ if (GTest_FOUND)
     target_link_libraries(${_TESTS_TARGET} GTest::gtest_main GTest::gtest Eigen3::Eigen minimacore::genetic_algorithm)
 
     gtest_discover_tests(${_TESTS_TARGET})
+
+    if (UNIX AND "${CMAKE_BUILD_TYPE}" MATCHES "^Debug")
+        include(CodeCoverage OPTIONAL)
+        setup_target_for_coverage_lcov(NAME ${PROJECT_NAME}_coverage
+                EXECUTABLE ${PROJECT_NAME}_tests
+                EXCLUDE "/usr/*" "include/*")
+    endif ()
 endif ()

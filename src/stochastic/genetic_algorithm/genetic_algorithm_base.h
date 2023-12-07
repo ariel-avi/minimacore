@@ -7,13 +7,11 @@
 #include <execution>
 #include <algorithm>
 #include <random>
+#include <set>
 #include <Eigen/Dense>
+#include <minimacore_concepts.h>
 
 namespace minimacore::genetic_algorithm {
-
-
-template<typename T>
-concept floating_point_type = std::is_floating_point_v<T>;
 
 using std::shared_ptr;
 using std::unique_ptr;
@@ -89,7 +87,44 @@ public:
 
 template<floating_point_type F>
 class tournament_selection_for_reproduction : public base_selection_for_reproduction<F> {
+public:
+  vector<base_individual<F>*> operator()(vector<individual_ptr<F>>& population) const override
+  {
+    std::uniform_int_distribution<size_t> dist(0, population.size() - 1);
+    vector<base_individual<F>*> result;
+    result.reserve(_selection_size);
+    const size_t tournament_size = _tournament_size < population.size() ? _tournament_size : population.size();
+    const size_t selection_size = _selection_size < population.size() ? _selection_size : population.size();
+    std::set<base_individual<F>*> selected_individuals;
+    std::random_device rd;
+    std::mt19937_64 gen(rd());
+    while (result.size() < selection_size) {
+      vector<base_individual<F>*> tournament_selection;
+      while (tournament_selection.size() < tournament_size) {
+        auto& selected_for_tournament = population[dist(gen)];
+        if (std::find(tournament_selection.begin(), tournament_selection.end(), selected_for_tournament.get()) ==
+            tournament_selection.end())
+          tournament_selection.push_back(selected_for_tournament.get());
+      }
+      
+      auto winner = std::min_element(tournament_selection.begin(),
+                                     tournament_selection.end(),
+                                     [](const base_individual<F>* a,
+                                        const base_individual<F>* b) { return *a < *b; });
+      
+      if (auto pair = selected_individuals.insert(*winner); pair.second) result.push_back(*pair.first);
+      
+    }
+    return result;
+  }
+  
+  explicit tournament_selection_for_reproduction(size_t tournament_size, size_t selection_size)
+      : _tournament_size(tournament_size), _selection_size(selection_size)
+  {}
 
+private:
+  size_t _tournament_size = 0;
+  size_t _selection_size = 0;
 };
 
 template<floating_point_type F>
@@ -116,12 +151,6 @@ template<floating_point_type F>
 class ranked_selection_for_replacement : public base_selection_for_replacement<F> {
 
 };
-
-template<typename T>
-concept cloneable = requires(T* t){ t->clone(); };
-
-template<typename T>
-concept optimization_object = requires{ cloneable<T>; };
 
 template<floating_point_type F>
 class individual : public base_individual<F> {

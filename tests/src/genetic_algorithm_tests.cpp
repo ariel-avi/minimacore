@@ -40,10 +40,10 @@ protected:
     
     ranked_selection_for_reproduction<F> selection_for_reproduction(
         rank_count, ranked_selection::select_by_ranks);
-    reproduction_selection_t<F> top_rank = selection_for_reproduction(_population);
-    ASSERT_EQ(top_rank.size(), test_set.size()) << "Rank count: " << rank_count;
+    reproduction_selection_t<F> selected = selection_for_reproduction(_population);
+    ASSERT_EQ(selected.size(), test_set.size()) << "Rank count: " << rank_count;
     
-    std::ranges::for_each(top_rank,
+    std::ranges::for_each(selected,
                           [test_set](auto& individual) {
                             EXPECT_TRUE(std::find(test_set.begin(), test_set.end(), individual) != test_set.end())
                                       << "Couldn't find " << individual << " in test set.";
@@ -217,6 +217,26 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, truncation_selection_for_replacem
   truncation_selection_for_replacement<TypeParam> replacement(5);
   replacement(this->_population);
   ASSERT_EQ(this->_population.size(), 5);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, is_dominant)
+{
+  EXPECT_FALSE(ranked_selection::is_dominant(this->_population[0], this->_population));
+  EXPECT_FALSE(ranked_selection::is_dominant(this->_population[1], this->_population));
+  EXPECT_TRUE(ranked_selection::is_dominant(this->_population[2], this->_population));
+  EXPECT_TRUE(ranked_selection::is_dominant(this->_population[3], this->_population));
+  EXPECT_TRUE(ranked_selection::is_dominant(this->_population[4], this->_population));
+  EXPECT_FALSE(ranked_selection::is_dominant(this->_population[5], this->_population));
+  EXPECT_FALSE(ranked_selection::is_dominant(this->_population[6], this->_population));
+  EXPECT_FALSE(ranked_selection::is_dominant(this->_population[7], this->_population));
+  EXPECT_FALSE(ranked_selection::is_dominant(this->_population[8], this->_population));
+  EXPECT_FALSE(ranked_selection::is_dominant(this->_population[9], this->_population));
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, rank_population)
+{
+  ranked_selection_t<TypeParam> ranks = ranked_selection::rank_population(this->_population);
+  ASSERT_EQ(ranks.size(), 4);
 }
 
 /**

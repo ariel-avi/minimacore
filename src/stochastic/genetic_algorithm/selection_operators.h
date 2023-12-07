@@ -101,19 +101,19 @@ public:
   template<floating_point_type F>
   static bool is_dominant(const individual_ptr<F>& individual, const reproduction_selection_t<F>& subgroup)
   {
-    return !std::any_of(std::execution::par_unseq,
-                        subgroup.begin(),
-                        subgroup.end(),
-                        [&](const auto& comparison) {
-                          if (individual != comparison) {
-                            bool is_dominant{true};
-                            for (size_t i = 0; i < individual->get_object_fitnesses().size(); i++)
-                              is_dominant = is_dominant &&
-                                  individual->objective_fitness(i) > comparison->objective_fitness(i);
-                            return is_dominant;
-                          }
-                          return false;
-                        });
+    return std::all_of(std::execution::par_unseq,
+                       subgroup.begin(),
+                       subgroup.end(),
+                       [&](const auto& comparison) {
+                         if (individual != comparison) {
+                           bool is_dominant{false};
+                           for (size_t i = 0; i < individual->get_object_fitnesses().size(); i++)
+                             is_dominant = is_dominant ||
+                                           individual->objective_fitness(i) < comparison->objective_fitness(i);
+                           return is_dominant;
+                         }
+                         return true;
+                       });
   }
   
   template<floating_point_type F>
@@ -125,7 +125,6 @@ public:
     while (!cpy.empty()) {
       auto& current_rank = ranks.emplace_back();
       for (auto& individual : cpy) if (is_dominant(individual, cpy)) current_rank.push_back(individual);
-      
       std::erase_if(cpy,
                     [&current_rank](const auto& individual) {
                       return std::find(current_rank.begin(), current_rank.end(), individual) != current_rank.end();
@@ -158,6 +157,7 @@ public:
             result.push_back(individual);
           }
         }
+        return result;
         break;
       }
       case ranked_selection::select_by_individuals:

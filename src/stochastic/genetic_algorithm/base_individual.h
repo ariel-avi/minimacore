@@ -59,6 +59,10 @@ public:
     return _genome;
   }
   
+  [[nodiscard]] bool is_valid() const {
+    return _fitness_values.allFinite();
+  }
+  
   explicit base_individual(genome_t<F> genome, long objective_count)
       : _genome(genome), _fitness_values(objective_count)
   {}

@@ -449,6 +449,10 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, benchmark_function_evaluation)
   for (auto& individual : this->_population) {
     EXPECT_EQ(evaluation(*individual, 0), this->_functions.size());
     EXPECT_FALSE(individual->overall_fitness() < 1E-6);
+    EXPECT_TRUE(individual->is_valid());
+    individual->set_objective_fitness(0, NAN);
+    EXPECT_FALSE(individual->is_valid());
   }
 }
+
 

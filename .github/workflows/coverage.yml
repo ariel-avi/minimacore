@@ -16,6 +16,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Install LCOV
+        run: apt-get update && apt-get install -y lcov
+
       - name: Build and measure
         run: sh ci/coverage.sh
 

@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: arielavi/cpp-env:build-boost
+      image: arielavi/cpp-env:build
 
     steps:
       - name: Checkout code

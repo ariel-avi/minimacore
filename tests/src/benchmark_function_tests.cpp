@@ -4,55 +4,35 @@
 #include <Eigen/Dense>
 #include "test_functions.h"
 
-template<floating_point_type T, std::size_t Dim = 0UL>
-struct io {
-  T (* function)(const Eigen::Vector<T, Dim>&);
-  
-  Eigen::Vector<T, Dim> input;
-  T expected;
+template<floating_point_type T>
+class benchmark_functions_test : public ::testing::Test {
+public:
 };
 
-template<floating_point_type T, std::size_t Dim = 0UL>
-class benchmark_functions_test : public ::testing::TestWithParam<io<T, Dim>> {
-protected:
-};
+using floating_point_types = ::testing::Types<long double, double, float>;
+TYPED_TEST_SUITE(benchmark_functions_test, floating_point_types);
 
-using mytypes = ::testing::Types<double>;
-typedef benchmark_functions_test<double, 2> rastrigin_tests;
-
-TEST_P(rastrigin_tests, _double)
+TYPED_TEST(benchmark_functions_test, rastrigin2)
 {
-  ASSERT_NEAR(GetParam().function(GetParam().input), GetParam().expected, 1E-8);
+  ASSERT_NEAR(rastrigin<TypeParam>(Eigen::Vector<TypeParam, 2>({0., 0.})), 0., 1E-8);
 }
 
-INSTANTIATE_TEST_SUITE_P(value_tests, rastrigin_tests,
-                         ::testing::Values(
-                             io<double, 2>(&rastrigin<double, 2>,
-                                           Eigen::Vector<double, 2>({0., 0.}),
-                                           0.),
-                             io<double, 2>(&sphere<double, 2>,
-                                           Eigen::Vector<double, 2>({0., 0.}),
-                                           0.)
-                         )
-);
-
-typedef benchmark_functions_test<double, 3> tests3;
-
-TEST_P(tests3, _double)
+TYPED_TEST(benchmark_functions_test, rastrigin3)
 {
-  ASSERT_NEAR(GetParam().function(GetParam().input), GetParam().expected, 1E-8);
+  ASSERT_NEAR(rastrigin<TypeParam>(Eigen::Vector<TypeParam, 3>({0., 0., 0.})), 0., 1E-8);
 }
 
-INSTANTIATE_TEST_SUITE_P(value_tests, tests3,
-                         ::testing::Values(
-                             io<double, 3>(&rastrigin<double, 3>,
-                                           Eigen::Vector<double, 3>({0., 0., 0.}),
-                                           0.),
-                             io<double, 3>(&sphere<double, 3>,
-                                           Eigen::Vector<double, 3>({0., 0., 0.}),
-                                           0.),
-                             io<double, 3>(&rosenbrock<double, 3>,
-                                           Eigen::Vector<double, 3>({1., 1., 1.}),
-                                           0.)
-                         )
-);
+TYPED_TEST(benchmark_functions_test, sphere2)
+{
+  ASSERT_NEAR(sphere<TypeParam>(Eigen::Vector<TypeParam, 2>({0., 0.})), 0., 1E-8);
+}
+
+TYPED_TEST(benchmark_functions_test, sphere3)
+{
+  ASSERT_NEAR(sphere<TypeParam>(Eigen::Vector<TypeParam, 3>({0., 0., 0.})), 0., 1E-8);
+}
+
+TYPED_TEST(benchmark_functions_test, rosenbrock3)
+{
+  ASSERT_NEAR(rosenbrock<TypeParam>(Eigen::Vector<TypeParam, 3>({1., 1., 1.})), 0., 1E-8);
+}

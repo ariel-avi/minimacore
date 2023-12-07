@@ -17,13 +17,12 @@ inline T square(T value)
 }
 
 
-template<floating_point_type T, std::size_t Dim>
-inline T rastrigin(const Eigen::Vector<T, Dim>& input)
+template<floating_point_type T>
+inline T rastrigin(const Eigen::VectorX<T>& input)
 {
   T a = 10.;
-  static_assert(Dim > 0);
-  T result = a * Dim;
-  for (std::size_t i = 0; i < Dim; i++) result += (square(input(i)) - a * std::cos(2. * EIGEN_PI * input(i)));
+  T result = a * input.size();
+  for (std::size_t i = 0; i < input.size(); i++) result += (square(input(i)) - a * std::cos(2. * EIGEN_PI * input(i)));
   return result;
 }
 
@@ -36,20 +35,19 @@ inline T auckley(const Eigen::Vector<T, 2>& input)
          - std::exp<T>(0.5 * (std::cos<T>(2. * EIGEN_PI * x) + std::cos<T>(2. * M_PI_2 * y))) + std::exp<T>() + 20.;
 }
 
-template<floating_point_type T, std::size_t Dim>
-inline T sphere(const Eigen::Vector<T, Dim>& input)
+template<floating_point_type T>
+inline T sphere(const Eigen::VectorX<T>& input)
 {
   T result = 0.;
-  for (std::size_t i = 0; i < Dim; i++) result += square(input(i));
+  for (std::size_t i = 0; i < input.size(); i++) result += square(input(i));
   return result;
 }
 
-template<floating_point_type T, std::size_t Dim>
-inline T rosenbrock(const Eigen::Vector<T, Dim>& input)
+template<floating_point_type T>
+inline T rosenbrock(const Eigen::VectorX<T>& input)
 {
-  static_assert(Dim > 2);
   T result = 0;
-  for (std::size_t i = 0; i < (Dim - 1); i++)
+  for (std::size_t i = 0; i < (input.size() - 1); i++)
     result += 100 * square(input(i + 1) - square(input(i))) +
               square(1 - square(input(i)));
   return result;

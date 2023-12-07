@@ -19,9 +19,6 @@ jobs:
       - name: Install pip
         run: apt-get update && apt-get install -y python3-pip
 
-      - name: Install sonar-scanner and build-wrapper
-        uses: SonarSource/sonarcloud-github-c-cpp@v1
-
       - name: install gcovr
         run: pip install gcovr==5.0 #5.1 not supported
 
@@ -48,6 +45,14 @@ jobs:
           files: cobertura-coverage.xml
           fail_ci_if_error: true
           functionalities: fixes
+
+      - name: Install sonar-scanner and build-wrapper
+        uses: SonarSource/sonarcloud-github-c-cpp@v1
+        with:
+          organization: ariel-avi
+          projectKey: ariel-avi_minimacore
+          token: ${{ secrets.SONAR_TOKEN }}
+          extraProperties: sonar.cfamily.gcov.reportsPath=sonar-coverage.xml
 
       - name: Run sonar-scanner
         env:

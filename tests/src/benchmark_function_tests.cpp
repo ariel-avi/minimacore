@@ -4,7 +4,7 @@
 #include <Eigen/Dense>
 #include "test_functions.h"
 
-template<floating_point_type T>
+template<floating_point_type>
 class benchmark_functions_test : public ::testing::Test {
 public:
 };

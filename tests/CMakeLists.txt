@@ -14,11 +14,10 @@ if (GTest_FOUND)
     set(_TESTS_TARGET ${PROJECT_NAME}_tests)
 
     add_executable(${_TESTS_TARGET}
-            src/base_tests.cpp
             src/genetic_algorithm_tests.cpp
             src/benchmark_function_tests.cpp)
 
-    target_link_libraries(${_TESTS_TARGET} GTest::gtest_main GTest::gtest Eigen3::Eigen)
+    target_link_libraries(${_TESTS_TARGET} GTest::gtest_main GTest::gtest Eigen3::Eigen minimacore::genetic_algorithm)
 
     gtest_discover_tests(${_TESTS_TARGET})
 endif ()

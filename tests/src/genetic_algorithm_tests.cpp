@@ -113,7 +113,7 @@ protected:
   
   vector<size_t> _unique_sorted_ranks;
   
-  vector<F (*)(const Eigen::VectorX<F>&)> _functions{{&rastrigin, &rosenbrock}};
+  vector<F (*)(const Eigen::VectorX<F>&)> _functions{{&rastrigin, &sphere}};
   
   // Two objectives (fitness values) for each individual in the population, to constitute multi-objectiveness
   vector<vector<F>> _fitness_values{

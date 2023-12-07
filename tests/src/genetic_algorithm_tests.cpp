@@ -461,7 +461,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, best_fitness_request)
   ASSERT_NEAR(calculator(this->_population), .7, 1E-6);
 }
 
-TYPED_TEST(minimacore_genetic_algorithm_tests, average_fitness_erquest)
+TYPED_TEST(minimacore_genetic_algorithm_tests, average_fitness_request)
 {
   average_fitness_request<TypeParam> calculator;
   ASSERT_NEAR(calculator(this->_population), 2.08, 1E-6);
@@ -471,6 +471,34 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, selection_pressure_request)
 {
   selection_pressure_request<TypeParam> calculator;
   ASSERT_NEAR(calculator(this->_population), 3.36538462E-1, 1E-6);
+}
+
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, evolution_statistics)
+{
+  evolution_statistics<TypeParam> stats(
+      std::initializer_list<int>{
+          statistics_requests_factory<TypeParam>::best_fitness_stat,
+          statistics_requests_factory<TypeParam>::average_fitness_stat,
+          statistics_requests_factory<TypeParam>::selection_pressure_stat
+      },
+      2
+  );
+  ASSERT_EQ(stats.current_generation(), 0);
+  stats.register_statistic(this->_population);
+  {
+    auto best_fitness_stat = stats[statistics_requests_factory<TypeParam>::best_fitness_stat];
+    EXPECT_NEAR(best_fitness_stat(stats.current_generation(), 0), 0.7, 1E-6);
+    EXPECT_EQ(best_fitness_stat.rows(), 1);
+  }
+  ++stats;
+  ASSERT_EQ(stats.current_generation(), 1);
+  stats.register_statistic(this->_population);
+  {
+    auto best_fitness_stat = stats[statistics_requests_factory<TypeParam>::best_fitness_stat];
+    EXPECT_NEAR(best_fitness_stat(stats.current_generation(), 0), 0.7, 1E-6);
+    EXPECT_EQ(best_fitness_stat.rows(), 2);
+  }
 }
 
 

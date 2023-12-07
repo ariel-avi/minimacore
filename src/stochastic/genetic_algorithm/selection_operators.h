@@ -151,11 +151,20 @@ public:
     auto ranks = rank_population(population);
     reproduction_selection_t<F> result;
     switch (_select_by) {
-      case ranked_selection::select_by_ranks:
+      case ranked_selection::select_by_ranks: {
+        size_t selected_amount{0};
+        while (selected_amount < ranks.size() && selected_amount < _selection_size) {
+          for (auto& individual : ranks[selected_amount++]) {
+            result.push_back(individual);
+          }
+        }
+        break;
+      }
       case ranked_selection::select_by_individuals:
       default:
         break;
     }
+    return result;
     size_t selected_amount{0};
     int count{0};
     while (selected_amount < _selection_size) {
@@ -249,7 +258,7 @@ public:
         auto current_rank_it = ranks_it->begin();
         while (population.size() < initial_population_size - _selection_size) {
           population.push_back(*current_rank_it);
-          if (current_rank_it++ == ranks_it->end()) {
+          if (++current_rank_it == ranks_it->end()) {
             if (ranks_it++ == ranks.end()) break;
             current_rank_it = ranks_it->begin();
           }

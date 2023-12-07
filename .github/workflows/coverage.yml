@@ -16,8 +16,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Install sonar-scanner and build-wrapper
+        uses: SonarSource/sonarcloud-github-c-cpp@v1
+
+      - name: install gcovr
+        run: pip install gcovr==5.0 #5.1 not supported
+
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE="Coverage"
+          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ --config Debug
 
       - name: Build and measure
         run: sh ci/coverage.sh
@@ -26,12 +37,21 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: coverage_reports
-          path: coverage.info
+          path: cobertura-coverage.xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage.info
+          files: cobertura-coverage.xml
           fail_ci_if_error: true
           functionalities: fixes
+
+      - name: Run sonar-scanner
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }} # Put the name of your token here
+        run: |
+          sonar-scanner \
+            --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}" \
+            --define sonar.coverageReportPaths=coverage.xml

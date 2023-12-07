@@ -2,7 +2,11 @@
 
 MinimaCore is an open-source modern C++ optimization library (C++20 or later).
 
-[![Run Unit Tests](https://github.com/ariel-avi/minimacore/actions/workflows/tests.yml/badge.svg)](https://github.com/ariel-avi/minimacore/actions/workflows/tests.yml) [![codecov](https://codecov.io/gh/ariel-avi/minimacore/graph/badge.svg?token=NGQBJPUWMB)](https://codecov.io/gh/ariel-avi/minimacore)
+[![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-black.svg)](https://sonarcloud.io/summary/new_code?id=ariel-avi_minimacore)
+
+[![Run Unit Tests](https://github.com/ariel-avi/minimacore/actions/workflows/tests.yml/badge.svg)](https://github.com/ariel-avi/minimacore/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/ariel-avi/minimacore/graph/badge.svg?token=NGQBJPUWMB)](https://codecov.io/gh/ariel-avi/minimacore)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=ariel-avi_minimacore&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=ariel-avi_minimacore)
 
 # Authors
 

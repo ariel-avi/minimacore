@@ -8,9 +8,26 @@ MinimaCore is an open-source modern C++ optimization library (C++20 or later).
 [![codecov](https://codecov.io/gh/ariel-avi/minimacore/graph/badge.svg?token=NGQBJPUWMB)](https://codecov.io/gh/ariel-avi/minimacore)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=ariel-avi_minimacore&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=ariel-avi_minimacore)
 
+# Background
+
+After looking around for some open source libraries with low licensing restrictions, we couldn't find any that met our requirements. The
+requirements are simple in terms of supported optimization problems and programming techniques.
+
+- No convoluted software API
+- Focus on continuous-domain problems
+- Use of modern and modular build systems and APIs
+- Easy to learn, use, implement and extend
+- Leverage parallelism
+- Open source and contribution-friendly
+
+The library should also support different algorithm types that follow the same programming paradigms and conventions. For example, if you
+need to solve a continuous-domain optimization problem, you should be able easily navigate through different algorithm types to try 
+different approaches for such problem. Changing from Genetic Algorithm to Differential Evolution or Particle Swarm Optimization should be
+easy and intuitive enough that not much documentation is necessary to migrate to a different solution.
+
 # Authors
 
-The library was conceptualized by Ariel Avi and Pedro Stella. Any contribution is encouraged.
+The library was conceptualized by Ariel Avi and Pedro Stella. We encourage any contribution from any source.
 
 # Getting Started
 
@@ -75,7 +92,7 @@ We decided to use Eigen3 as the matrix and vector operation calculations. Some r
 
 Anyone is encouraged to contribute, that is with algorithms, CMake scripts or case studies.
 
-- Please refer and always use [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines).
+- Please refer to and always use [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines).
 - We target a code coverage of 100%, despite knowing that sometimes that is utopian.
 - Code Style: code-style consistency is important to keep a sense of freshness in the library.
     - If you use JetBrains IDEs, you can import the code style from [resources](resources/minimacore-code-style.xml)

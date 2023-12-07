@@ -55,7 +55,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }} # Put the name of your token here
         run: |
           sonar-scanner \
-            --define sonar.organization="ariel-avi"
-            --define sonar.projectKey="ariel-avi_minimacore"
+            --define sonar.organization="ariel-avi" \
+            --define sonar.projectKey="ariel-avi_minimacore" \
             --define sonar.cfamily.build-wrapper-output="./wrapper-output-dir/" \
             --define sonar.coverageReportPaths=sonar-coverage.xml

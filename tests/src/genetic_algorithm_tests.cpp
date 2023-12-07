@@ -20,7 +20,7 @@ protected:
     unique_sorted_ranks.erase(end, unique_sorted_ranks.end());
     unique_sorted_ranks.shrink_to_fit();
     for (size_t i = 0; i < 10; i++) {
-      auto& ind = _population.emplace_back(std::make_unique<individual_impl>(Eigen::VectorX<F>(3), 2));
+      auto& ind = _population.emplace_back(std::make_shared<individual_impl>(Eigen::VectorX<F>(3), 2));
       ind->set_fitness_value(0, _fitness_values[0][i]);
       ind->set_fitness_value(1, _fitness_values[1][i]);
     }
@@ -28,18 +28,18 @@ protected:
   
   void test_ranked_selection_by_rank(size_t rank_count)
   {
-    vector<base_individual<F>*> test_set;
+    reproduction_selection_t<F> test_set;
     for (auto& rank_i : unique_sorted_ranks) {
       if (rank_i < rank_count) {
         for (size_t i{0}; i < ranks.size(); i++) {
-          if (ranks[i] == rank_i) test_set.push_back(_population[i].get());
+          if (ranks[i] == rank_i) test_set.push_back(_population[i]);
         }
       }
     }
     
     ranked_selection_for_reproduction<F> selection_for_reproduction(
         rank_count, ranked_selection_for_reproduction<F>::select_by_ranks);
-    vector top_rank = selection_for_reproduction(_population);
+    reproduction_selection_t<F> top_rank = selection_for_reproduction(_population);
     ASSERT_EQ(top_rank.size(), test_set.size()) << "Rank count: " << rank_count;
     
     std::ranges::for_each(top_rank,
@@ -49,7 +49,7 @@ protected:
                           });
   }
   
-  vector<individual_ptr<F>> _population;
+  population_t<F> _population;
   
   // Two objectives (fitness values) for each individual in the population, to constitute multi-objectiveness
   vector<vector<F>> _fitness_values{
@@ -119,7 +119,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, tournament_selection_for_reproduc
   tournament_selection_for_reproduction<TypeParam> selection(tournament_size, selection_size);
   vector selected_individuals = selection(this->_population);
   ASSERT_EQ(selected_individuals.size(), selection_size);
-  for (auto& i : selected_individuals) ASSERT_NE(i, this->_population[5].get());
+  for (auto& i : selected_individuals) ASSERT_NE(i, this->_population[5]);
 }
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_reproduction)

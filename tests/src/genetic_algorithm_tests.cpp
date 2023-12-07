@@ -264,6 +264,20 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement_
   this->test_ranked_selection_for_replacement_by_individuals(10);
 }
 
+template<floating_point_type F>
+static constexpr F tolerance()
+{
+  switch (sizeof(F)) {
+    case sizeof(float):
+      return 1E-4;
+    case sizeof(double):
+      return 1E-8;
+    case sizeof(long double):
+      return 1E-16;
+  }
+  return 1E-6;
+}
+
 TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_linear_crossover)
 {
   for (size_t i{0}; i < this->_population.size() / 2; i++) {
@@ -278,15 +292,19 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_linear_crossover)
     auto diff_a = individual_a->get_genome() - midpoint;
     auto ratio_a = diff_a.cwiseQuotient(genome_diff);
     ASSERT_GE(diff_a.norm(), genome_diff.norm());
-    for (long j{1}; j < genome.size(); j++) EXPECT_NEAR(ratio_a(j) / ratio_a(0), 1., 1E-5);
+    
+    for (long j{1}; j < genome.size(); j++) EXPECT_NEAR(ratio_a(j) / ratio_a(0), 1., tolerance<TypeParam>());
     
     auto diff_b = individual_b->get_genome() - midpoint;
     auto ratio_b = diff_b.cwiseQuotient(genome_diff);
     ASSERT_GE(diff_b.norm(), genome_diff.norm());
-    for (long j{1}; j < genome.size(); j++) EXPECT_NEAR(ratio_b(j) / ratio_b(0), 1., 1E-5);
+    for (long j{1}; j < genome.size(); j++) EXPECT_NEAR(ratio_b(j) / ratio_b(0), 1., tolerance<TypeParam>());
   }
 }
 
+/**
+ * @brief This test has a very small chance of failing.
+ */
 TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_voluminal_crossover)
 {
   for (size_t i{0}; i < this->_population.size() / 2; i++) {
@@ -303,14 +321,44 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_voluminal_crossover)
     ASSERT_GE(diff_a.norm(), genome_diff.norm());
     for (long j{1}; j < genome.size(); j++)
       EXPECT_TRUE(std::abs(std::abs(ratio_a(j) / ratio_a(0)) - 1.) > 1E-5)
-                << "ratio_a(" << j << "): " << ratio_a(j) << "\nratio_a(0): " << ratio_a(0);
+                << "ratio_a(" << j << "): " << ratio_a(j)
+                << "\nratio_a(0): " << ratio_a(0);
     
     auto diff_b = individual_b->get_genome() - midpoint;
     auto ratio_b = diff_b.cwiseQuotient(genome_diff);
     ASSERT_GE(diff_b.norm(), genome_diff.norm());
     for (long j{1}; j < genome.size(); j++)
       EXPECT_TRUE(std::abs(std::abs(ratio_b(j) / ratio_b(0)) - 1.) > 1E-5)
-                << "ratio_b(" << j << "): " << ratio_b(j) << "\nratio_b(0): " << ratio_b(0);
+                << "ratio_b(" << j << "): " << ratio_b(j)
+                << "\nratio_b(0): " << ratio_b(0);
+  }
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, gaussian_mutation)
+{
+  const size_t repetitions{1'000};
+  for (auto& individual : this->_population) {
+    gaussian_mutation<TypeParam> mutation(0.05, 1E-2);
+    genome_t<TypeParam> genome = genome_t<TypeParam>::Zero(individual->get_genome().size());
+    for (size_t i{0}; i < repetitions; i++) genome += mutation(*individual);
+    genome /= TypeParam(repetitions);
+    EXPECT_TRUE(genome.isApprox(individual->get_genome(), 1E-2))
+              << genome.transpose() << '\n' << individual->get_genome().transpose();
+  }
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_mutation)
+{
+  vector<TypeParam> factors{
+      {1., 2., 3., 4., 5., 6.}
+  };
+  for (auto& factor : factors) {
+    for (auto& individual : this->_population) {
+      uniform_mutation<TypeParam> mutation(0.05, factor);
+      genome_t<TypeParam> genome = mutation(*individual);
+      auto diff = individual->get_genome() - genome;
+      for (size_t i{0}; i < genome.size(); i++) EXPECT_LE(diff(i), factor);
+    }
   }
 }
 

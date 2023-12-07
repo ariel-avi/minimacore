@@ -67,6 +67,14 @@ template<floating_point_type F>
 class mutation {
 public:
   virtual genome_t<F> operator()(const base_individual<F>& individual) const = 0;
+  
+  [[nodiscard]] F get_rate() const
+  {
+    return _rate;
+  }
+  
+  explicit mutation(F rate) : _rate(rate)
+  {}
 
 private:
   F _rate;
@@ -80,10 +88,13 @@ public:
     std::normal_distribution<F> distribution(0., _std_dev);
     std::random_device device;
     std::mt19937_64 gen(device());
-    genome_t<F> cpy(individual._genome);
-    for (long i = 0; i < cpy.size(); i++) cpy(i) += distribution(gen());
+    genome_t<F> cpy(individual.get_genome());
+    for (long i = 0; i < cpy.size(); i++) cpy(i) += distribution(gen);
     return cpy;
   }
+  
+  gaussian_mutation(F rate, F std_dev) : mutation<F>(rate), _std_dev(std_dev)
+  {}
 
 private:
   F _std_dev;
@@ -94,9 +105,19 @@ class uniform_mutation : public mutation<F> {
 public:
   genome_t<F> operator()(const base_individual<F>& individual) const override
   {
-    
-    return minimacore::genetic_algorithm::individual_ptr<F>();
+    std::uniform_real_distribution<F> distribution(-1., 1.);
+    std::random_device device;
+    std::mt19937_64 gen(device());
+    genome_t<F> cpy(individual.get_genome());
+    for (long i = 0; i < cpy.size(); i++) cpy(i) += distribution(gen) * _factor;
+    return cpy;
   }
+  
+  uniform_mutation(F rate, F factor) : mutation<F>(rate), _factor(factor)
+  {}
+  
+private:
+  F _factor;
 };
 
 }

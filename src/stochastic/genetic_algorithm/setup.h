@@ -122,17 +122,16 @@ public:
   }
   
   setup(setup&& other) noexcept
-  {
-    _population_size = other._population_size;
-    _generations = other._generations;
-    _selection_for_replacement = std::move(other._selection_for_replacement);
-    _selection_for_reproduction = std::move(other._selection_for_reproduction);
-    _crossover = std::move(other._crossover);
-    _mutation = std::move(other._mutation);
-    _genome_generator = std::move(other._genome_generator);
-    _termination_conditions = std::move(other._termination_conditions);
-    _evaluations = std::move(other._evaluations);
-  }
+      : _population_size(other._population_size),
+        _generations(other._generations),
+        _selection_for_replacement(std::move(other._selection_for_replacement)),
+        _selection_for_reproduction(std::move(other._selection_for_reproduction)),
+        _crossover(std::move(other._crossover)),
+        _mutation(std::move(other._mutation)),
+        _genome_generator(std::move(other._genome_generator)),
+        _termination_conditions(std::move(other._termination_conditions)),
+        _evaluations(std::move(other._evaluations))
+  {}
   
   setup(const setup& other) = delete;
   

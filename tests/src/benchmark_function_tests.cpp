@@ -5,9 +5,7 @@
 #include "test_functions.h"
 
 template<floating_point_type>
-class benchmark_functions_test : public ::testing::Test {
-public:
-};
+class benchmark_functions_test : public ::testing::Test {};
 
 using floating_point_types = ::testing::Types<long double, double, float>;
 TYPED_TEST_SUITE(benchmark_functions_test, floating_point_types);

@@ -113,7 +113,8 @@ public:
   }
   
   template<floating_point_type F>
-  static ranked_selection_t<F> rank_population(const population_t<F>& population) {
+  static ranked_selection_t<F> rank_population(const population_t<F>& population)
+  {
     ranked_selection_t<F> ranks;
     size_t initial_population_size = population.size();
     population_t<F> cpy(population);
@@ -143,7 +144,14 @@ public:
   
   reproduction_selection_t<F> operator()(population_t<F>& population) const override
   {
+    auto ranks = rank_population(population);
     reproduction_selection_t<F> result;
+    switch (_select_by) {
+      case ranked_selection::select_by_ranks:
+      case ranked_selection::select_by_individuals:
+      default:
+        break;
+    }
     size_t selected_amount{0};
     int count{0};
     while (selected_amount < _selection_size) {

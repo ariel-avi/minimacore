@@ -167,7 +167,12 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, truncation_selection_for_reproduc
   size_t selection_size = 5;
   truncation_selection_for_reproduction<TypeParam> selection(selection_size);
   auto selected_individuals = selection(this->_population);
-  // TODO: write comprehensive tests for this
+  ASSERT_EQ(selected_individuals.size(), selection_size);
+  for (size_t i = selection_size; i < this->_population.size(); i++) {
+    EXPECT_TRUE(std::all_of(selected_individuals.begin(), selected_individuals.end(), [&](auto& individual) {
+      return individual->overall_fitness() < this->_population[i]->overall_fitness();
+    }));
+  }
 }
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, tournament_selection_for_reproduction)

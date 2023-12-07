@@ -350,7 +350,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_linear_crossover)
   for (size_t i{0}; i < this->_population.size() / 2; i++) {
     const auto& individual_a = this->_population[i];
     const auto& individual_b = this->_population[i + this->_population.size() / 2];
-    uniform_linear_crossover<TypeParam> crossover(1.);
+    uniform_linear_crossover<TypeParam> crossover(1., 2);
     auto genome = crossover(*individual_a, *individual_b);
     auto midpoint = (individual_b->genome() + individual_a->genome()) / 2;
     
@@ -377,7 +377,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_voluminal_crossover)
   for (size_t i{0}; i < this->_population.size() / 2; i++) {
     const auto& individual_a = this->_population[i];
     const auto& individual_b = this->_population[i + this->_population.size() / 2];
-    uniform_voluminal_crossover<TypeParam> crossover(1.);
+    uniform_voluminal_crossover<TypeParam> crossover(1., 2);
     auto genome = crossover(*individual_a, *individual_b);
     auto midpoint = (individual_b->genome() + individual_a->genome()) / 2;
     
@@ -405,7 +405,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, gaussian_mutation)
 {
   const size_t repetitions{1'000};
   for (auto& individual : this->_population) {
-    gaussian_mutation<TypeParam> mutation(0.05, 1E-2);
+    gaussian_mutation<TypeParam> mutation(0.05, 1E-2, 2);
     genome_t<TypeParam> genome = genome_t<TypeParam>::Zero(individual->genome().size());
     for (size_t i{0}; i < repetitions; i++) genome += mutation(*individual);
     genome /= TypeParam(repetitions);
@@ -421,7 +421,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_mutation)
   };
   for (auto& factor : factors) {
     for (auto& individual : this->_population) {
-      uniform_mutation<TypeParam> mutation(0.05, factor);
+      uniform_mutation<TypeParam> mutation(0.05, factor, 2);
       genome_t<TypeParam> genome = mutation(*individual);
       auto diff = individual->genome() - genome;
       for (size_t i{0}; i < genome.size(); i++) EXPECT_LE(diff(i), factor);

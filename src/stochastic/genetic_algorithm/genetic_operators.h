@@ -12,11 +12,28 @@ namespace minimacore::genetic_algorithm {
 
 template<floating_point_type F>
 class base_crossover {
-
 public:
+  explicit base_crossover(size_t seed = 0) : _seed(seed)
+  {}
+  
   virtual genome_t<F> operator()(const base_individual<F>& a, const base_individual<F>& b) const = 0;
   
   virtual ~base_crossover() = default;
+
+protected:
+  [[nodiscard]] size_t seed() const
+  {
+    return _seed;
+  }
+  
+  [[nodiscard]] std::mt19937_64 make_generator() const
+  {
+    std::random_device device;
+    return std::mt19937_64(seed() ? seed() : device());
+  }
+
+private:
+  size_t _seed{0};
 };
 
 template<floating_point_type F>
@@ -25,15 +42,14 @@ public:
   genome_t<F> operator()(const base_individual<F>& a, const base_individual<F>& b) const override
   {
     std::uniform_real_distribution<F> distribution(-1., 1.);
-    std::random_device device;
-    std::mt19937_64 gen(device());
+    auto gen = this->make_generator();
     F factor = _alpha * distribution(gen);
     auto midpoint = (a.genome() + b.genome()) / 2.;
     auto difference = b.genome() - midpoint;
     return midpoint + factor * difference;
   };
   
-  explicit uniform_linear_crossover(F alpha) : _alpha(alpha)
+  explicit uniform_linear_crossover(F alpha, size_t seed = 0) : base_crossover<F>(seed), _alpha(alpha)
   {}
 
 private:
@@ -46,8 +62,7 @@ public:
   genome_t<F> operator()(const base_individual<F>& a, const base_individual<F>& b) const override
   {
     std::uniform_real_distribution<F> distribution(-1., 1.);
-    std::random_device device;
-    std::mt19937_64 gen(device());
+    auto gen = this->make_generator();
     genome_t<F> result = (a.genome() + b.genome()) / 2.;
     for (long i = 0; i < result.size(); i++) {
       F factor = _alpha * distribution(gen);
@@ -56,7 +71,7 @@ public:
     return result;
   };
   
-  explicit uniform_voluminal_crossover(F alpha) : _alpha(alpha)
+  explicit uniform_voluminal_crossover(F alpha, size_t seed = 0) : base_crossover<F>(seed), _alpha(alpha)
   {}
 
 private:
@@ -70,10 +85,9 @@ public:
   
   [[nodiscard]] bool should_mutate() const
   {
-    std::random_device device{};
-    std::mt19937_64 generator{device()};
+    auto gen = make_generator();
     std::uniform_real_distribution<F> distribution(0., 1.);
-    F chance = distribution(generator);
+    F chance = distribution(gen);
     return chance <= _rate;
   }
   
@@ -82,12 +96,25 @@ public:
     return _rate;
   }
   
-  explicit base_mutation(F rate) : _rate(rate)
+  explicit base_mutation(F rate, size_t seed = 0) : _seed(seed), _rate(rate)
   {}
   
   virtual ~base_mutation() = default;
 
+protected:
+  [[nodiscard]] size_t seed() const
+  {
+    return _seed;
+  }
+  
+  [[nodiscard]] std::mt19937_64 make_generator() const
+  {
+    std::random_device device;
+    return std::mt19937_64(seed() ? seed() : device());
+  }
+
 private:
+  size_t _seed{0};
   F _rate;
 };
 
@@ -97,14 +124,13 @@ public:
   genome_t<F> operator()(const base_individual<F>& individual) const override
   {
     std::normal_distribution<F> distribution(0., _std_dev);
-    std::random_device device;
-    std::mt19937_64 gen(device());
     genome_t<F> cpy(individual.genome());
+    auto gen = this->make_generator();
     for (long i = 0; i < cpy.size(); i++) cpy(i) += distribution(gen);
     return cpy;
   }
   
-  gaussian_mutation(F rate, F std_dev) : base_mutation<F>(rate), _std_dev(std_dev)
+  gaussian_mutation(F rate, F std_dev, size_t seed = 0) : base_mutation<F>(rate, seed), _std_dev(std_dev)
   {}
 
 private:
@@ -117,14 +143,13 @@ public:
   genome_t<F> operator()(const base_individual<F>& individual) const override
   {
     std::uniform_real_distribution<F> distribution(-1., 1.);
-    std::random_device device;
-    std::mt19937_64 gen(device());
     genome_t<F> cpy(individual.genome());
+    auto gen = this->make_generator();
     for (long i = 0; i < cpy.size(); i++) cpy(i) += distribution(gen) * _factor;
     return cpy;
   }
   
-  uniform_mutation(F rate, F factor) : base_mutation<F>(rate), _factor(factor)
+  uniform_mutation(F rate, F factor, size_t seed = 0) : base_mutation<F>(rate, seed), _factor(factor)
   {}
 
 private:

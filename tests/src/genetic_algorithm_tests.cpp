@@ -7,6 +7,25 @@
 using namespace minimacore::genetic_algorithm;
 
 template<floating_point_type F>
+class chromosome_generator_impl : public base_chromosome_generator<F> {
+public:
+  void generate_chromosome(const individual_ptr<F>& individual) const override
+  {
+    std::random_device device;
+    std::mt19937_64 generator(device());
+    std::uniform_real_distribution<F> dist(lower_limit, upper_limit);
+    for (auto i{0}; i < individual->genome().size(); i++) individual->genome()(i) = dist(generator);
+  }
+  
+  chromosome_generator_impl(F lower_limit, F upper_limit)
+      : lower_limit(lower_limit), upper_limit(upper_limit)
+  {}
+
+private:
+  F lower_limit, upper_limit;
+};
+
+template<floating_point_type F>
 class minimacore_genetic_algorithm_tests : public ::testing::Test {
 protected:
   
@@ -14,6 +33,9 @@ protected:
   
   void SetUp() override
   {
+    _genome_generator = std::make_unique<genome_generator<F>>(Eigen::VectorX<F>::Random(3));
+    _genome_generator->append_chromosome_generator(std::make_unique<chromosome_generator_impl<F>>(-5.28, 5.28));
+    
     _unique_sorted_ranks = this->_ranks;
     std::sort(_unique_sorted_ranks.begin(), _unique_sorted_ranks.end());
     auto end = std::unique(_unique_sorted_ranks.begin(), _unique_sorted_ranks.end());
@@ -21,9 +43,17 @@ protected:
     _unique_sorted_ranks.shrink_to_fit();
     for (size_t i = 0; i < 10; i++) {
       auto& ind = _population.emplace_back(
-          std::make_shared<individual_impl>(Eigen::VectorX<F>::Random(3), _functions.size()));
+          std::make_shared<individual_impl>(_genome_generator->initial_genome(),
+                                            _functions.size()));
       ind->set_objective_fitness(0, _fitness_values[0][i]);
       ind->set_objective_fitness(1, _fitness_values[1][i]);
+      (*_genome_generator)(ind);
+      auto& genome = ind->genome();
+      EXPECT_FALSE(_genome_generator->initial_genome().isApprox(genome));
+      for (auto j{0}; j < genome.size(); j++) {
+        EXPECT_GE(genome(j), -5.28);
+        EXPECT_LE(genome(j), 5.28);
+      }
     }
   }
   
@@ -170,6 +200,8 @@ protected:
           }),
       2
   };
+  
+  unique_ptr<genome_generator<F>> _genome_generator;
   
 };
 
@@ -396,37 +428,15 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_mutation)
   }
 }
 
-template<floating_point_type F>
-class chromosome_generator_impl : public base_chromosome_generator<F> {
-public:
-  void generate_chromosome(const individual_ptr<F>& individual) const override
-  {
-    std::random_device device;
-    std::mt19937_64 generator(device());
-    std::uniform_real_distribution<F> dist(lower_limit, upper_limit);
-    for (auto i{0}; i < individual->genome().size(); i++) individual->genome()(i) = dist(generator);
-  }
-  
-  chromosome_generator_impl(F lower_limit, F upper_limit)
-      : lower_limit(lower_limit), upper_limit(upper_limit)
-  {}
 
-private:
-  F lower_limit, upper_limit;
-};
-
-TYPED_TEST(minimacore_genetic_algorithm_tests, genome_generator)
+TYPED_TEST(minimacore_genetic_algorithm_tests, population_initialization)
 {
   auto& population = this->_population;
-  genome_generator<TypeParam> generator;
-  generator.append_chromosome_generator(std::make_unique<chromosome_generator_impl<TypeParam>>(-5.28, 5.28));
-  vector<Eigen::VectorX<TypeParam>> original_genomes;
-  for (auto& individual : population) original_genomes.push_back(individual->genome());
-  ASSERT_EQ(original_genomes.size(), population.size());
-  for (auto& individual : population) generator(individual);
-  for (size_t i{0UL}; i < original_genomes.size(); i++) {
-    auto& genome = population[i]->genome();
-    EXPECT_FALSE(original_genomes[i].isApprox(genome));
+  auto& initial_genome = this->_genome_generator->initial_genome();
+  for (auto& individual : population) {
+    (*this->_genome_generator)(individual);
+    auto& genome = individual->genome();
+    EXPECT_FALSE(initial_genome.isApprox(genome));
     for (auto j{0}; j < genome.size(); j++) {
       EXPECT_GE(genome(j), -5.28);
       EXPECT_LE(genome(j), 5.28);
@@ -444,6 +454,11 @@ public:
       objective_index++;
     }
     return objective_index;
+  }
+  
+  [[nodiscard]] size_t objective_count() const override
+  {
+    return 1;
   }
   
   explicit benchmark_function_evaluation(const vector<F (*)(const Eigen::VectorX<F>&)>& f_ptr) : _f_ptr(f_ptr)
@@ -482,7 +497,6 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, selection_pressure_request)
   selection_pressure_request<TypeParam> calculator;
   ASSERT_NEAR(calculator(this->_population), 3.36538462E-1, 1E-6);
 }
-
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, evolution_statistics)
 {

@@ -16,6 +16,10 @@ public:
    * @return The index of the next objective to be filled by the next evaluation
    */
   [[nodiscard]] virtual size_t operator()(base_individual<F>& individual, size_t objective_index) const = 0;
+  
+  [[nodiscard]] virtual size_t objective_count() const = 0;
+  
+  virtual ~base_evaluation() = default;
 };
 
 }

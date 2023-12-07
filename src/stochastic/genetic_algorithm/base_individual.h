@@ -71,7 +71,7 @@ public:
     _fitness_values.setConstant(NAN);
   }
 
-protected:
+private:
   genome_t<F> _genome;
   Eigen::VectorX<F> _fitness_values;
 };

@@ -8,9 +8,22 @@ namespace minimacore::genetic_algorithm {
 
 
 template<floating_point_type F>
+population_t<F>& sort(population_t<F>& population)
+{
+  std::sort(std::execution::par_unseq, population.begin(), population.end(),
+            [](const individual_ptr<F>& a, const individual_ptr<F>& b) {
+              return *a < *b;
+            });
+  return population;
+}
+
+
+template<floating_point_type F>
 class base_selection_for_reproduction {
 public:
   virtual reproduction_selection_t<F> operator()(population_t<F>& population) const = 0;
+  
+  virtual ~base_selection_for_reproduction() = default;
 };
 
 template<floating_point_type F>
@@ -21,10 +34,7 @@ public:
   {
     reproduction_selection_t<F> result;
     result.reserve(_selection_size);
-    std::sort(std::execution::par_unseq, population.begin(), population.end(),
-              [](const individual_ptr<F>& a, const individual_ptr<F>& b) {
-                return *a < *b;
-              });
+    sort(population);
     for (size_t selected = 0; selected < _selection_size; selected++) result.push_back(population[selected]);
     return result;
   }
@@ -75,13 +85,43 @@ private:
   size_t _selection_size{0};
 };
 
-template<floating_point_type F>
-class ranked_selection_for_reproduction : public base_selection_for_reproduction<F> {
+class ranked_selection {
 public:
-  enum select_by {
+  enum select_by : int {
     select_by_ranks = 0,
     select_by_individuals,
   };
+  
+  template<floating_point_type F>
+  static bool is_dominant(const individual_ptr<F>& individual, const reproduction_selection_t<F>& subgroup)
+  {
+    std::atomic_bool is_pareto_front = true;
+    std::for_each(std::execution::par_unseq,
+                  subgroup.begin(),
+                  subgroup.end(),
+                  [&](const auto& comparison) {
+                    if (individual != comparison) {
+                      std::atomic_bool is_lower_rank = true;
+                      for (size_t i = 0; i < individual->get_fitness_values().size(); i++) {
+                        is_lower_rank = is_lower_rank && individual->fitness_value(i) > comparison->fitness_value(i);
+                      }
+                      is_pareto_front = is_pareto_front && !is_lower_rank;
+                    }
+                  });
+    return is_pareto_front;
+  }
+
+protected:
+  ranked_selection(size_t selection_size, select_by select_by) : _selection_size(selection_size), _select_by(select_by)
+  {}
+  
+  size_t _selection_size{0};
+  select_by _select_by{0};
+};
+
+template<floating_point_type F>
+class ranked_selection_for_reproduction : public base_selection_for_reproduction<F>, public ranked_selection {
+public:
   
   reproduction_selection_t<F> operator()(population_t<F>& population) const override
   {
@@ -101,7 +141,7 @@ public:
                     });
       
       for (auto& subgroup_individual : subgroup) {
-        if (is_top_rank(subgroup_individual, subgroup)) {
+        if (is_dominant<F>(subgroup_individual, subgroup)) {
           result.push_back(subgroup_individual);
           if (_select_by == select_by_individuals && ++selected_amount < _selection_size) return result;
         }
@@ -112,53 +152,61 @@ public:
   }
   
   ranked_selection_for_reproduction(size_t selection_size, select_by by)
-      : base_selection_for_reproduction<F>(),
-        _selection_size(selection_size),
-        _select_by(by)
+      : base_selection_for_reproduction<F>(), ranked_selection(selection_size, by)
   {}
-
-private:
-  
-  bool is_top_rank(const individual_ptr<F>& individual, const reproduction_selection_t<F>& subgroup) const
-  {
-    std::atomic_bool is_pareto_front = true;
-    std::for_each(std::execution::par_unseq,
-                  subgroup.begin(),
-                  subgroup.end(),
-                  [&](const auto& comparison) {
-                    if (individual != comparison) {
-                      std::atomic<bool> is_lower_rank = true;
-                      for (size_t i = 0; i < individual->get_fitness_values().size(); i++) {
-                        is_lower_rank = is_lower_rank && individual->fitness_value(i) > comparison->fitness_value(i);
-                      }
-                      is_pareto_front = is_pareto_front && !is_lower_rank;
-                    }
-                  });
-    return is_pareto_front;
-  }
-  
-  size_t _selection_size{0};
-  select_by _select_by{0};
 };
 
 template<floating_point_type F>
 class base_selection_for_replacement {
-  virtual void operator()(population_t<F>& population) const = 0;
+public:
+  virtual population_t<F>& operator()(population_t<F>& population) const = 0;
+  
+  virtual ~base_selection_for_replacement() = default;
 };
 
 template<floating_point_type F>
 class generational_selection_for_replacement : public base_selection_for_replacement<F> {
-
+public:
+  population_t<F>& operator()(population_t<F>& population) const override
+  {
+    population.clear();
+    return population;
+  }
+  
+  generational_selection_for_replacement() = default;
 };
 
 template<floating_point_type F>
 class truncation_selection_for_replacement : public base_selection_for_replacement<F> {
+public:
+  population_t<F>& operator()(population_t<F>& population) const override
+  {
+    sort(population);
+    size_t elements_to_remove =
+        _selection_size < population.size() ? population.size() - _selection_size : population.size();
+    auto first = population.begin() + elements_to_remove;
+    population.erase(first, population.end());
+    return population;
+  }
+  
+  explicit truncation_selection_for_replacement(size_t selection_size) : _selection_size(selection_size)
+  {}
 
+private:
+  size_t _selection_size{0};
 };
 
 template<floating_point_type F>
-class ranked_selection_for_replacement : public base_selection_for_replacement<F> {
-
+class ranked_selection_for_replacement : public base_selection_for_replacement<F>, public ranked_selection {
+public:
+  population_t<F>& operator()(population_t<F>& population) const override
+  {
+    return population;
+  }
+  
+  ranked_selection_for_replacement(size_t selection_size, select_by select_by)
+      : ranked_selection(selection_size, select_by)
+  {}
 };
 
 }

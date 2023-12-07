@@ -57,7 +57,6 @@ public:
 template<floating_point_type F> using individual_ptr = shared_ptr<base_individual<F>>;
 template<floating_point_type F> using population_t = vector<individual_ptr<F>>;
 template<floating_point_type F> using reproduction_selection_t = vector<individual_ptr<F>>;
-template<floating_point_type F> using replacement_selection_t = vector<base_individual<F>*>;
 
 template<floating_point_type F>
 class individual : public base_individual<F> {

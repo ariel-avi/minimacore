@@ -19,19 +19,19 @@ jobs:
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 
-      - name: Build (Coverage)
-        run: cmake --build build --config Debug --target minimacore_coverage
+      - name: Build and measure
+        run: sh ci/coverage.sh
 
       - name: Archive Coverage Reports
         uses: actions/upload-artifact@v2
         with:
           name: coverage_reports
-          path: build/mbsolve_coverage
+          path: coverage.info
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-          files: build/mbsolve_coverage.info
+          files: coverage.info
           fail_ci_if_error: true
           functionalities: fixes

@@ -16,21 +16,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install pip
-        run: apt-get update && apt-get install -y python3-pip
-
-      - name: install gcovr
-        run: pip install gcovr==5.0 #5.1 not supported
-
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE="Coverage"
 
-      - name: Install sonar-scanner and build-wrapper
-        uses: SonarSource/sonarcloud-github-c-cpp@v1
-
       - name: Build
-        run: |
-          build-wrapper-linux-x86-64 --out-dir "./wrapper-output-dir/" cmake --build build/ --config Debug
+        run: cmake --build build/
 
       - name: Build and measure
         run: sh ci/coverage.sh
@@ -48,14 +38,3 @@ jobs:
           files: cobertura-coverage.xml
           fail_ci_if_error: true
           functionalities: fixes
-
-      - name: Run sonar-scanner
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }} # Put the name of your token here
-        run: |
-          sonar-scanner \
-            --define sonar.organization="ariel-avi" \
-            --define sonar.projectKey="ariel-avi_minimacore" \
-            --define sonar.cfamily.build-wrapper-output="./wrapper-output-dir/" \
-            --define sonar.coverageReportPaths=sonar-coverage.xml

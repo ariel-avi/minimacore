@@ -22,7 +22,8 @@ public:
   {}
 
 private:
-  F lower_limit, upper_limit;
+  F lower_limit;
+  F upper_limit;
 };
 
 template<floating_point_type F>
@@ -531,49 +532,52 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, generation_termination)
   }
 }
 
-TYPED_TEST(minimacore_genetic_algorithm_tests, best_fitness_termination)
+TYPED_TEST(minimacore_genetic_algorithm_tests, best_fitness_termination_positive)
 {
   this->_statistics.register_statistic(this->_population);
-  {
-    best_fitness_termination<TypeParam> termination(0.);
-    ASSERT_FALSE(termination(this->_statistics));
-  }
-  {
-    best_fitness_termination<TypeParam> termination(1.);
-    ASSERT_TRUE(termination(this->_statistics));
-  }
+  best_fitness_termination<TypeParam> termination(1.);
+  ASSERT_TRUE(termination(this->_statistics));
 }
 
-TYPED_TEST(minimacore_genetic_algorithm_tests, average_fitness_termination)
+TYPED_TEST(minimacore_genetic_algorithm_tests, best_fitness_termination_negative)
 {
   this->_statistics.register_statistic(this->_population);
-  {
-    average_fitness_termination<TypeParam> termination(0.);
-    ASSERT_FALSE(termination(this->_statistics));
-  }
-  {
-    average_fitness_termination<TypeParam> termination(2.1);
-    ASSERT_TRUE(termination(this->_statistics));
-  }
+  best_fitness_termination<TypeParam> termination(0.);
+  ASSERT_FALSE(termination(this->_statistics));
 }
 
-TYPED_TEST(minimacore_genetic_algorithm_tests, selection_pressure_termination)
+TYPED_TEST(minimacore_genetic_algorithm_tests, average_fitness_termination_positive)
 {
   this->_statistics.register_statistic(this->_population);
-  {
-    selection_pressure_termination<TypeParam> termination(1.);
-    ASSERT_FALSE(termination(this->_statistics));
-  }
-  {
-    selection_pressure_termination<TypeParam> termination(0.1);
-    ASSERT_TRUE(termination(this->_statistics))
-                  << "Selection pressure: " << selection_pressure_request<TypeParam>{}(this->_population)
-                  << "\nAverage fitness: " << average_fitness_request<TypeParam>{}(this->_population)
-                  << "\nBest fitness: " << best_fitness_request<TypeParam>{}(this->_population)
-                  << "\nStatistics Selection pressure: "
-                  << this->_statistics.current_value(
-                      (int) statistics_requests_factory<TypeParam>::stat_requests::selection_pressure_stat);
-  }
+  average_fitness_termination<TypeParam> termination(2.1);
+  ASSERT_TRUE(termination(this->_statistics));
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, average_fitness_termination_negative)
+{
+  this->_statistics.register_statistic(this->_population);
+  average_fitness_termination<TypeParam> termination(0.);
+  ASSERT_FALSE(termination(this->_statistics));
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, selection_pressure_termination_positive)
+{
+  this->_statistics.register_statistic(this->_population);
+  selection_pressure_termination<TypeParam> termination(0.1);
+  ASSERT_TRUE(termination(this->_statistics))
+                << "Selection pressure: " << selection_pressure_request<TypeParam>{}(this->_population)
+                << "\nAverage fitness: " << average_fitness_request<TypeParam>{}(this->_population)
+                << "\nBest fitness: " << best_fitness_request<TypeParam>{}(this->_population)
+                << "\nStatistics Selection pressure: "
+                << this->_statistics.current_value(
+                    (int) statistics_requests_factory<TypeParam>::stat_requests::selection_pressure_stat);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, selection_pressure_termination_negative)
+{
+  this->_statistics.register_statistic(this->_population);
+  selection_pressure_termination<TypeParam> termination(1.);
+  ASSERT_FALSE(termination(this->_statistics));
 }
 
 

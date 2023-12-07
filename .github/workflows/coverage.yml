@@ -25,6 +25,14 @@ jobs:
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE="Coverage"
 
+      - name: Install sonar-scanner and build-wrapper
+        uses: SonarSource/sonarcloud-github-c-cpp@v1
+        with:
+          organization: ariel-avi
+          projectKey: ariel-avi_minimacore
+          token: ${{ secrets.SONAR_TOKEN }}
+          extraProperties: sonar.cfamily.gcov.reportsPath=sonar-coverage.xml
+
       - name: Build
         run: |
           build-wrapper-linux-x86-64 --out-dir "./wrapper-output-dir/" cmake --build build/ --config Debug
@@ -45,14 +53,6 @@ jobs:
           files: cobertura-coverage.xml
           fail_ci_if_error: true
           functionalities: fixes
-
-      - name: Install sonar-scanner and build-wrapper
-        uses: SonarSource/sonarcloud-github-c-cpp@v1
-        with:
-          organization: ariel-avi
-          projectKey: ariel-avi_minimacore
-          token: ${{ secrets.SONAR_TOKEN }}
-          extraProperties: sonar.cfamily.gcov.reportsPath=sonar-coverage.xml
 
       - name: Run sonar-scanner
         env:

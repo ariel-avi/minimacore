@@ -15,7 +15,8 @@ if (GTest_FOUND)
 
     add_executable(${_TESTS_TARGET}
             src/base_tests.cpp
-            src/genetic_algorithm_tests.cpp)
+            src/genetic_algorithm_tests.cpp
+            src/benchmark_function_tests.cpp)
 
     target_link_libraries(${_TESTS_TARGET} GTest::gtest_main GTest::gtest Eigen3::Eigen)
 

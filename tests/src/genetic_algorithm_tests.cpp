@@ -387,9 +387,9 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_mutation)
 }
 
 template<floating_point_type F>
-class genome_generator : public base_genome_generator<F> {
+class chromosome_generator_impl : public base_chromosome_generator<F> {
 public:
-  void operator()(const individual_ptr<F>& individual) const override
+  void generate_chromosome(const individual_ptr<F>& individual) const override
   {
     std::random_device device;
     std::mt19937_64 generator(device());
@@ -397,7 +397,7 @@ public:
     for (auto i{0}; i < individual->genome().size(); i++) individual->genome()(i) = dist(generator);
   }
   
-  genome_generator(F lower_limit, F upper_limit)
+  chromosome_generator_impl(F lower_limit, F upper_limit)
       : lower_limit(lower_limit), upper_limit(upper_limit)
   {}
 
@@ -405,15 +405,15 @@ private:
   F lower_limit, upper_limit;
 };
 
-TYPED_TEST(minimacore_genetic_algorithm_tests, population_generator)
+TYPED_TEST(minimacore_genetic_algorithm_tests, genome_generator)
 {
   auto& population = this->_population;
-  population_generator<TypeParam> generator;
-  generator.append_genome_generator(std::make_unique<genome_generator<TypeParam>>(-5.28, 5.28));
+  genome_generator<TypeParam> generator;
+  generator.append_chromosome_generator(std::make_unique<chromosome_generator_impl<TypeParam>>(-5.28, 5.28));
   vector<Eigen::VectorX<TypeParam>> original_genomes;
   for (auto& individual : population) original_genomes.push_back(individual->genome());
   ASSERT_EQ(original_genomes.size(), population.size());
-  generator(population);
+  for (auto& individual : population) generator(individual);
   for (size_t i{0UL}; i < original_genomes.size(); i++) {
     auto& genome = population[i]->genome();
     EXPECT_FALSE(original_genomes[i].isApprox(genome));
@@ -453,6 +453,24 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, benchmark_function_evaluation)
     individual->set_objective_fitness(0, NAN);
     EXPECT_FALSE(individual->is_valid());
   }
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, best_fitness_request)
+{
+  best_fitness_request<TypeParam> calculator;
+  ASSERT_NEAR(calculator(this->_population), .7, 1E-6);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, average_fitness_erquest)
+{
+  average_fitness_request<TypeParam> calculator;
+  ASSERT_NEAR(calculator(this->_population), 2.08, 1E-6);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, selection_pressure_request)
+{
+  selection_pressure_request<TypeParam> calculator;
+  ASSERT_NEAR(calculator(this->_population), 3.36538462E-1, 1E-6);
 }
 
 

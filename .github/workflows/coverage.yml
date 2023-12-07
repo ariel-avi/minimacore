@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install cURL
-        run: sudo apt install -y curl
+        run: apt-get install -y curl
 
       - name: Install sonar-scanner and build-wrapper
         uses: SonarSource/sonarcloud-github-c-cpp@v1

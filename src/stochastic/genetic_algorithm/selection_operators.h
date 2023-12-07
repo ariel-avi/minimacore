@@ -113,21 +113,20 @@ public:
   }
   
   template<floating_point_type F>
-  static bool is_dominated(const individual_ptr<F>& individual, const reproduction_selection_t<F>& subgroup)
-  {
-    return !std::any_of(std::execution::par_unseq,
-                        subgroup.begin(),
-                        subgroup.end(),
-                        [&](const auto& comparison) {
-                          if (individual != comparison) {
-                            std::atomic_bool is_fully_dominated{true};
-                            for (size_t i = 0; i < individual->get_fitness_values().size(); i++)
-                              is_fully_dominated = is_fully_dominated &&
-                                                   individual->fitness_value(i) < comparison->fitness_value(i);
-                            return is_fully_dominated.load();
-                          }
-                          return false;
-                        });
+  static ranked_selection_t<F> rank_population(const population_t<F>& population) {
+    ranked_selection_t<F> ranks;
+    size_t initial_population_size = population.size();
+    population_t<F> cpy(population);
+    while (!cpy.empty()) {
+      auto& current_rank = ranks.emplace_back();
+      for (auto& individual : cpy) if (is_dominant(individual, cpy)) current_rank.push_back(individual);
+      
+      std::erase_if(cpy,
+                    [&current_rank](const auto& individual) {
+                      return std::find(current_rank.begin(), current_rank.end(), individual) != current_rank.end();
+                    });
+    }
+    return ranks;
   }
 
 protected:
@@ -222,23 +221,32 @@ class ranked_selection_for_replacement : public base_selection_for_replacement<F
 public:
   population_t<F>& operator()(population_t<F>& population) const override
   {
-    ranked_selection_t<F> ranks;
-    while (!population.empty()) {
-      auto& current_rank = ranks.emplace_back();
-      for (auto& individual : population) {
-        if (is_dominant(individual, population)) current_rank.push_back(individual);
+    size_t initial_population_size = population.size();
+    ranked_selection_t<F> ranks = rank_population(population);
+    population.clear();
+    switch (_select_by) {
+      case ranked_selection::select_by_ranks:
+        for (size_t i{0}; ranks.size() - i > _selection_size;)
+          std::ranges::for_each(ranks[i++],
+                                [&population](const auto& individual) {
+                                  population.push_back(individual);
+                                });
+        break;
+      case ranked_selection::select_by_individuals: {
+        auto ranks_it = ranks.begin();
+        auto current_rank_it = ranks_it->begin();
+        while (population.size() < initial_population_size - _selection_size) {
+          population.push_back(*current_rank_it);
+          if (current_rank_it++ == ranks_it->end()) {
+            if (ranks_it++ == ranks.end()) break;
+            current_rank_it = ranks_it->begin();
+          }
+        }
+        break;
       }
-      std::erase_if(population, [&current_rank](const auto& individual) {
-        return std::find(current_rank.begin(), current_rank.end(), individual) != current_rank.end();
-      });
+      default:
+        break;
     }
-    
-    for (size_t i{0}; ranks.size() - i > _selection_size;)
-      std::ranges::for_each(ranks[i++],
-                            [&population](const auto& individual) {
-                              population.push_back(individual);
-                            });
-    
     return population;
   }
   

@@ -99,6 +99,14 @@ protected:
                           });
   }
   
+  void test_ranked_selection_for_replacement_by_individuals(size_t individual_count)
+  {
+    ranked_selection_for_replacement<F> selection(
+        individual_count, ranked_selection::select_by_individuals);
+    selection(_population);
+    ASSERT_EQ(_population.size(), 10 - individual_count);
+  }
+  
   population_t<F> _population;
   
   vector<size_t> _unique_sorted_ranks;
@@ -202,6 +210,10 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, truncation_selection_for_replacem
   ASSERT_EQ(this->_population.size(), 5);
 }
 
+/**
+ * @brief The following tests must be crated separately because they modify the population, so the population needs to
+ * be initialized again after every test.
+ */
 TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement_by_ranks_1)
 {
   this->test_ranked_selection_for_replacement_by_ranks(1);
@@ -220,5 +232,30 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement_
 TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement_by_ranks_4)
 {
   this->test_ranked_selection_for_replacement_by_ranks(4);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement_by_individuals_1)
+{
+  this->test_ranked_selection_for_replacement_by_individuals(1);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement_by_individuals_2)
+{
+  this->test_ranked_selection_for_replacement_by_individuals(2);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement_by_individuals_4)
+{
+  this->test_ranked_selection_for_replacement_by_individuals(4);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement_by_individuals_8)
+{
+  this->test_ranked_selection_for_replacement_by_individuals(8);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement_by_individuals_10)
+{
+  this->test_ranked_selection_for_replacement_by_individuals(10);
 }
 

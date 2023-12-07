@@ -1,5 +1,6 @@
 
 #include <gtest/gtest.h>
+#include <source_location>
 #include "genetic_algorithm_base.h"
 
 using namespace minimacore::genetic_algorithm;
@@ -13,7 +14,7 @@ protected:
   void SetUp() override
   {
     for (size_t i = 0; i < 10; i++) {
-      auto& ind = _population.emplace_back(std::make_unique<individual_impl>(Eigen::VectorX<F>::Ones(3)));
+      auto& ind = _population.emplace_back(std::make_unique<individual_impl>(Eigen::VectorX<F>(3)));
       ind->append_fitness_value(_fitness_values[i]);
     }
   }
@@ -60,4 +61,9 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, tournament_selection_for_reproduc
   for (auto& i : selected_individuals) {
     ASSERT_NE(i, this->_population[5].get());
   }
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_reproduction)
+{
+  // todo
 }

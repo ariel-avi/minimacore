@@ -44,7 +44,7 @@ public:
     _fitness_values[index] = value;
   }
   
-  F append_fitness_value(F value)
+  void append_fitness_value(F value)
   {
     _fitness_values.push_back(value);
   }
@@ -165,15 +165,11 @@ private:
 
 template<floating_point_type F>
 class base_crossover {
-protected:
-  std::mt19937_64 _generator;
 
 public:
   virtual individual_ptr<F> operator()(const individual<F>& a, const individual<F>& b) const = 0;
   
-  explicit base_crossover(std::random_device random_device = std::random_device{"mt19937"})
-      : _generator(random_device())
-  {}
+  virtual ~base_crossover() = default;
 };
 
 template<floating_point_type F>

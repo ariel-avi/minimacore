@@ -19,7 +19,7 @@ protected:
     _unique_sorted_ranks.erase(end, _unique_sorted_ranks.end());
     _unique_sorted_ranks.shrink_to_fit();
     for (size_t i = 0; i < 10; i++) {
-      auto& ind = _population.emplace_back(std::make_shared<individual_impl>(Eigen::VectorX<F>(3), 2));
+      auto& ind = _population.emplace_back(std::make_shared<individual_impl>(Eigen::VectorX<F>::Random(3), 2));
       ind->set_objective_fitness(0, _fitness_values[0][i]);
       ind->set_objective_fitness(1, _fitness_values[1][i]);
     }
@@ -262,5 +262,55 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement_
 TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement_by_individuals_10)
 {
   this->test_ranked_selection_for_replacement_by_individuals(10);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_linear_crossover)
+{
+  for (size_t i{0}; i < this->_population.size() / 2; i++) {
+    const auto& individual_a = this->_population[i];
+    const auto& individual_b = this->_population[i + this->_population.size() / 2];
+    uniform_linear_crossover<TypeParam> crossover(1.);
+    auto genome = crossover(*individual_a, *individual_b);
+    auto midpoint = (individual_b->get_genome() + individual_a->get_genome()) / 2;
+    
+    auto genome_diff = genome - midpoint;
+    
+    auto diff_a = individual_a->get_genome() - midpoint;
+    auto ratio_a = diff_a.cwiseQuotient(genome_diff);
+    ASSERT_GE(diff_a.norm(), genome_diff.norm());
+    for (long j{1}; j < genome.size(); j++) EXPECT_NEAR(ratio_a(j) / ratio_a(0), 1., 1E-5);
+    
+    auto diff_b = individual_b->get_genome() - midpoint;
+    auto ratio_b = diff_b.cwiseQuotient(genome_diff);
+    ASSERT_GE(diff_b.norm(), genome_diff.norm());
+    for (long j{1}; j < genome.size(); j++) EXPECT_NEAR(ratio_b(j) / ratio_b(0), 1., 1E-5);
+  }
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_voluminal_crossover)
+{
+  for (size_t i{0}; i < this->_population.size() / 2; i++) {
+    const auto& individual_a = this->_population[i];
+    const auto& individual_b = this->_population[i + this->_population.size() / 2];
+    uniform_voluminal_crossover<TypeParam> crossover(1.);
+    auto genome = crossover(*individual_a, *individual_b);
+    auto midpoint = (individual_b->get_genome() + individual_a->get_genome()) / 2;
+    
+    auto genome_diff = genome - midpoint;
+    
+    auto diff_a = individual_a->get_genome() - midpoint;
+    auto ratio_a = diff_a.cwiseQuotient(genome_diff);
+    ASSERT_GE(diff_a.norm(), genome_diff.norm());
+    for (long j{1}; j < genome.size(); j++)
+      EXPECT_TRUE(std::abs(std::abs(ratio_a(j) / ratio_a(0)) - 1.) > 1E-5)
+                << "ratio_a(" << j << "): " << ratio_a(j) << "\nratio_a(0): " << ratio_a(0);
+    
+    auto diff_b = individual_b->get_genome() - midpoint;
+    auto ratio_b = diff_b.cwiseQuotient(genome_diff);
+    ASSERT_GE(diff_b.norm(), genome_diff.norm());
+    for (long j{1}; j < genome.size(); j++)
+      EXPECT_TRUE(std::abs(std::abs(ratio_b(j) / ratio_b(0)) - 1.) > 1E-5)
+                << "ratio_b(" << j << "): " << ratio_b(j) << "\nratio_b(0): " << ratio_b(0);
+  }
 }
 

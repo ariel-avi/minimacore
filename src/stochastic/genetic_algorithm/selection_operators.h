@@ -112,6 +112,7 @@ public:
                                   individual->objective_fitness(i) > comparison->objective_fitness(i);
                             return is_dominant;
                           }
+                          return false;
                         });
   }
   

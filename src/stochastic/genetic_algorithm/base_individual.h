@@ -49,6 +49,10 @@ public:
     return _fitness_values(index);
   }
   
+  const genome_t<F>& get_genome() const {
+    return _genome;
+  }
+  
   explicit base_individual(genome_t<F> genome, long objective_count)
       : _genome(genome), _fitness_values(objective_count)
   {}

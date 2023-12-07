@@ -1,5 +1,5 @@
 
-add_library(minimacore_genetic_algorithm INTERFACE genetic_algorithm_base.h)
+add_library(minimacore_genetic_algorithm INTERFACE genetic_algorithm_base.h base_individual.h selection_operators.h)
 add_library(minimacore::genetic_algorithm ALIAS minimacore_genetic_algorithm)
 target_include_directories(minimacore_genetic_algorithm INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(minimacore_genetic_algorithm INTERFACE Eigen3::Eigen minimacore::base_concepts)

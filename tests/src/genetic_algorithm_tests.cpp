@@ -9,7 +9,7 @@ template<floating_point_type F>
 class minimacore_genetic_algorithm_tests : public ::testing::Test {
 protected:
   
-  using individual_impl = individual<F>;
+  using individual_impl = base_individual<F>;
   
   void SetUp() override
   {
@@ -20,8 +20,8 @@ protected:
     _unique_sorted_ranks.shrink_to_fit();
     for (size_t i = 0; i < 10; i++) {
       auto& ind = _population.emplace_back(std::make_shared<individual_impl>(Eigen::VectorX<F>(3), 2));
-      ind->set_fitness_value(0, _fitness_values[0][i]);
-      ind->set_fitness_value(1, _fitness_values[1][i]);
+      ind->set_objective_fitness(0, _fitness_values[0][i]);
+      ind->set_objective_fitness(1, _fitness_values[1][i]);
     }
   }
   

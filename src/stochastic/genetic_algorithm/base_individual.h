@@ -13,14 +13,10 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::vector;
 
+template<floating_point_type F> using genome_t = Eigen::VectorX<F>;
+
 template<floating_point_type F>
 class base_individual {
-protected:
-  Eigen::VectorX<F> _fitness_values;
-  
-  explicit base_individual(long objective_count)
-      : _fitness_values(objective_count)
-  {}
 
 public:
   F overall_fitness() const
@@ -38,37 +34,40 @@ public:
     return overall_fitness() == other.overall_fitness();
   }
   
-  void set_fitness_value(size_t index, F value)
+  void set_objective_fitness(size_t index, F value)
   {
     _fitness_values(index) = value;
   }
   
-  const Eigen::VectorX<F>& get_fitness_values() const
+  const Eigen::VectorX<F>& get_object_fitnesses() const
   {
     return _fitness_values;
   }
   
-  F fitness_value(size_t index) const
+  F objective_fitness(size_t index) const
   {
     return _fitness_values(index);
   }
+  
+  explicit base_individual(genome_t<F> genome, long objective_count)
+      : _genome(genome), _fitness_values(objective_count)
+  {}
+
+protected:
+  genome_t<F> _genome;
+  Eigen::VectorX<F> _fitness_values;
 };
 
 template<floating_point_type F> using individual_ptr = shared_ptr<base_individual<F>>;
 template<floating_point_type F> using population_t = vector<individual_ptr<F>>;
 template<floating_point_type F> using reproduction_selection_t = vector<individual_ptr<F>>;
 
-template<floating_point_type F>
-class individual : public base_individual<F> {
+template<floating_point_type F, typename T>
+class individual_converter {
 public:
-  explicit individual(Eigen::VectorX<F> genome, long objective_count)
-      : base_individual<F>(objective_count),
-        _genome(genome)
-  {}
-
-private:
-  Eigen::VectorX<F> _genome;
+  virtual T convert(const genome_t<F>& genome) const = 0;
   
+  virtual genome_t<F> convert(const T& optimization_object) const = 0;
 };
 
 }

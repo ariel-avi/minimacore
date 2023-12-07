@@ -3,6 +3,9 @@
 #define MINIMACORE_SELECTION_OPERATORS_H
 
 #include "base_individual.h"
+#include <algorithm>
+#include <execution>
+#include <random>
 
 namespace minimacore::genetic_algorithm {
 
@@ -104,9 +107,9 @@ public:
                         [&](const auto& comparison) {
                           if (individual != comparison) {
                             bool is_dominant{true};
-                            for (size_t i = 0; i < individual->get_fitness_values().size(); i++)
+                            for (size_t i = 0; i < individual->get_object_fitnesses().size(); i++)
                               is_dominant = is_dominant &&
-                                            individual->fitness_value(i) > comparison->fitness_value(i);
+                                  individual->objective_fitness(i) > comparison->objective_fitness(i);
                             return is_dominant;
                           }
                         });

@@ -16,6 +16,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Install pip
+        run: apt-get update && apt-get install -y python3-pip
+
+      - name: install gcovr
+        run: pip install gcovr==5.0 #5.1 not supported
+
       - name: Configure CMake
         run: cmake -S . -B build/coverage/ -DCMAKE_BUILD_TYPE="Coverage"
 
@@ -29,12 +35,12 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: coverage_reports
-          path: cobertura-coverage.xml
+          path: coverage.xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-          files: cobertura-coverage.xml
+          files: coverage.xml
           fail_ci_if_error: true
           functionalities: fixes

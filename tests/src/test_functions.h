@@ -30,7 +30,7 @@ inline T auckley(const Eigen::Vector<T, 2>& input)
   T x = input(0);
   T y = input(1);
   return -20. * std::exp<T>(-0.2 * std::sqrt<T>(0.2 * (square(x) + square(y))))
-         - std::exp<T>(0.5 * (std::cos<T>(2. * EIGEN_PI * x) + std::cos<T>(2. * M_PI_2 * y))) + std::exp<T>() + 20.;
+         - std::exp<T>(0.5 * (std::cos<T>(2. * EIGEN_PI * x) + std::cos<T>(2. * EIGEN_PI * y))) + std::exp<T>() + 20.;
 }
 
 template<floating_point_type T>

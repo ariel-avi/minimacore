@@ -26,7 +26,7 @@ public:
   
   exit_code run()
   {
-    _log << logger::uts_timestamp() << "Starting genetic algorithm...\n";
+    _log << logger::wrapped_uts_timestamp() << "Starting genetic algorithm...\n";
     initialize_individual_zero();
     initialize_population();
     _statistics.register_statistic(_population);
@@ -40,9 +40,9 @@ public:
       fill_population(reproduction_set);
       _statistics.register_statistic(_population);
       update_best_individual();
-      _log << logger::uts_timestamp() << "Generation " << _statistics.current_generation() << " complete\n";
+      _log << logger::wrapped_uts_timestamp() << "Generation " << _statistics.current_generation() << " complete\n";
     }
-    _log << logger::uts_timestamp() << "Genetic algorithm complete, exit code: " << successful_exit << '\n';
+    _log << logger::wrapped_uts_timestamp() << "Genetic algorithm complete, exit code: " << successful_exit << '\n';
     return successful_exit;
   }
   
@@ -87,18 +87,18 @@ private:
   
   void initialize_individual_zero()
   {
-    _log << logger::uts_timestamp() << "Initializing individual zero\n";
+    _log << logger::wrapped_uts_timestamp() << "Initializing individual zero\n";
     _individual_zero = std::make_shared<base_individual<F>>(
         _setup.get_genome_generator().initial_genome(),
         objective_count()
     );
     evaluate(_individual_zero);
-    _log << logger::uts_timestamp() << "Individual zero fitness: " << _individual_zero->overall_fitness() << '\n';
+    _log << logger::wrapped_uts_timestamp() << "Individual zero fitness: " << _individual_zero->overall_fitness() << '\n';
   }
   
   void initialize_population()
   {
-    _log << logger::uts_timestamp() << "Initializing population, size = " << _setup.population_size() << '\n';
+    _log << logger::wrapped_uts_timestamp() << "Initializing population, size = " << _setup.population_size() << '\n';
     while (_population.size() < _setup.population_size()) {
       auto& individual = _population.emplace_back(
           std::make_shared<base_individual<F>>(

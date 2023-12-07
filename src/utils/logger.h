@@ -29,12 +29,19 @@ public:
   }
   
   explicit logger() = default;
-  
+
   static inline std::string uts_timestamp() {
     std::time_t time = std::time({});
     std::string timeString{"yyyy-mm-ddThh:mm:ssZ"};
     std::strftime(timeString.data(), std::size("yyyy-mm-ddThh:mm:ssZ"), "%FT%TZ", std::gmtime(&time));
     return timeString;
+  }
+
+  static inline std::string wrapped_uts_timestamp() {
+    std::time_t time = std::time({});
+    std::string timeString{"yyyy-mm-ddThh:mm:ssZ"};
+    std::strftime(timeString.data(), std::size("yyyy-mm-ddThh:mm:ssZ"), "%FT%TZ", std::gmtime(&time));
+    return "[" + timeString + "] ";
   }
   
 private:

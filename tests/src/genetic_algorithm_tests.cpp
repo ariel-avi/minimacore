@@ -16,10 +16,9 @@ public:
     std::uniform_real_distribution<F> dist(lower_limit, upper_limit);
     for (auto i{0}; i < individual->genome().size(); i++) individual->genome()(i) = dist(generator);
   }
-  
+
   chromosome_generator_impl(F lower_limit, F upper_limit)
-      : lower_limit(lower_limit), upper_limit(upper_limit)
-  {}
+          :lower_limit(lower_limit), upper_limit(upper_limit) { }
 
 private:
   F lower_limit;
@@ -29,14 +28,14 @@ private:
 template<floating_point_type F>
 class minimacore_genetic_algorithm_tests : public ::testing::Test {
 protected:
-  
+
   using individual_impl = base_individual<F>;
-  
+
   void SetUp() override
   {
     _genome_generator = std::make_unique<genome_generator<F>>(Eigen::VectorX<F>::Random(3));
     _genome_generator->append_chromosome_generator(std::make_unique<chromosome_generator_impl<F>>(-5.28, 5.28));
-    
+
     _unique_sorted_ranks = this->_ranks;
     std::sort(_unique_sorted_ranks.begin(), _unique_sorted_ranks.end());
     auto end = std::unique(_unique_sorted_ranks.begin(), _unique_sorted_ranks.end());
@@ -44,8 +43,9 @@ protected:
     _unique_sorted_ranks.shrink_to_fit();
     for (size_t i = 0; i < 10; i++) {
       auto& ind = _population.emplace_back(
-          std::make_shared<individual_impl>(_genome_generator->initial_genome(),
-                                            _functions.size()));
+              std::make_shared<individual_impl>(
+                      _genome_generator->initial_genome(),
+                      _functions.size()));
       ind->set_objective_fitness(0, _fitness_values[0][i]);
       ind->set_objective_fitness(1, _fitness_values[1][i]);
       (*_genome_generator)(ind);
@@ -57,7 +57,7 @@ protected:
       }
     }
   }
-  
+
   void test_ranked_selection_for_reproduction_by_ranks(size_t rank_count)
   {
     reproduction_selection_t<F> test_set;
@@ -68,19 +68,22 @@ protected:
         }
       }
     }
-    
+
     ranked_selection_for_reproduction<F> selection_for_reproduction(
-        rank_count, ranked_selection::select_by_ranks);
+            rank_count, ranked_selection::select_by_ranks
+    );
     reproduction_selection_t<F> selected = selection_for_reproduction(_population);
     ASSERT_EQ(selected.size(), test_set.size()) << "Rank count: " << rank_count;
-    
-    std::ranges::for_each(selected,
-                          [test_set](auto& individual) {
-                            EXPECT_TRUE(std::find(test_set.begin(), test_set.end(), individual) != test_set.end())
-                                      << "Couldn't find " << individual << " in test add_evaluation.";
-                          });
+
+    std::ranges::for_each(
+            selected,
+            [test_set](auto& individual) {
+              EXPECT_TRUE(std::find(test_set.begin(), test_set.end(), individual) != test_set.end())
+                          << "Couldn't find " << individual << " in test add_evaluation.";
+            }
+    );
   }
-  
+
   void test_ranked_selection_for_replacement_by_ranks(size_t rank_count)
   {
     reproduction_selection_t<F> test_set;
@@ -94,21 +97,24 @@ protected:
       }
     }
     ranked_selection_for_replacement<F> selection(
-        rank_count, ranked_selection::select_by_ranks);
+            rank_count, ranked_selection::select_by_ranks
+    );
     selection(_population);
     ASSERT_EQ(_population.size() + test_set.size(), _ranks.size())
-                  << "Rank count: " << rank_count
-                  << "\nTest Size: " << test_set.size()
-                  << "\nPopulation size: " << _population.size();
-    
-    std::ranges::for_each(test_set,
-                          [&](auto& individual) {
-                            EXPECT_TRUE(
-                                std::find(_population.begin(), _population.end(), individual) == _population.end())
-                                      << "Found " << individual << " in population.";
-                          });
+                        << "Rank count: " << rank_count
+                        << "\nTest Size: " << test_set.size()
+                        << "\nPopulation size: " << _population.size();
+
+    std::ranges::for_each(
+            test_set,
+            [&](auto& individual) {
+              EXPECT_TRUE(
+                      std::find(_population.begin(), _population.end(), individual) == _population.end())
+                          << "Found " << individual << " in population.";
+            }
+    );
   }
-  
+
   void test_ranked_selection_for_reproduction_by_individuals(size_t individual_count)
   {
     reproduction_selection_t<F> test_set;
@@ -119,91 +125,96 @@ protected:
         }
       }
     }
-    
+
     ranked_selection_for_reproduction<F> selection_for_reproduction(
-        individual_count, ranked_selection::select_by_individuals);
+            individual_count, ranked_selection::select_by_individuals
+    );
     reproduction_selection_t<F> top_rank = selection_for_reproduction(_population);
     ASSERT_NE(top_rank.size(), test_set.size());
-    
-    std::ranges::for_each(top_rank,
-                          [test_set](auto& individual) {
-                            EXPECT_TRUE(std::find(test_set.begin(), test_set.end(), individual) != test_set.end())
-                                      << "Couldn't find " << individual << " in test add_evaluation.";
-                          });
+
+    std::ranges::for_each(
+            top_rank,
+            [test_set](auto& individual) {
+              EXPECT_TRUE(std::find(test_set.begin(), test_set.end(), individual) != test_set.end())
+                          << "Couldn't find " << individual << " in test add_evaluation.";
+            }
+    );
   }
-  
+
   void test_ranked_selection_for_replacement_by_individuals(size_t individual_count)
   {
     ranked_selection_for_replacement<F> selection(
-        individual_count, ranked_selection::select_by_individuals);
+            individual_count, ranked_selection::select_by_individuals
+    );
     selection(_population);
     ASSERT_EQ(_population.size(), 10 - individual_count);
   }
-  
+
   population_t<F> _population;
-  
+
   vector<size_t> _unique_sorted_ranks;
-  
+
   vector<F (*)(const Eigen::VectorX<F>&)> _functions{{&rastrigin, &rosenbrock}};
-  
+
   // Two objectives (fitness values) for each individual in the population, to constitute multi-objectiveness
   vector<vector<F>> _fitness_values{
-      {
           {
-              1.,
-              1.2,
-              0.2,
-              0.3,
-              1.4,
-              3.,
-              2.3,
-              0.4,
-              1.1,
-              2.1
-          },
-          {
-              0.6,
-              1.3,
-              0.5,
-              0.4,
-              0.2,
-              1.,
-              0.3,
-              1.4,
-              1.2,
-              0.9
-          },
-      }
+                  {
+                          1.,
+                          1.2,
+                          0.2,
+                          0.3,
+                          1.4,
+                          3.,
+                          2.3,
+                          0.4,
+                          1.1,
+                          2.1
+                  },
+                  {
+                          0.6,
+                          1.3,
+                          0.5,
+                          0.4,
+                          0.2,
+                          1.,
+                          0.3,
+                          1.4,
+                          1.2,
+                          0.9
+                  },
+          }
   };
-  
+
   // These are the ranks of the objective functions defined above - taken manually for check against unit test
   vector<size_t> _ranks{
-      {
-          1,
-          3,
-          0,
-          0,
-          0,
-          3,
-          1,
-          1,
-          2,
-          2
-      }
-  };
-  
-  evolution_statistics<F> _statistics{
-      2,
-      std::initializer_list<int>(
           {
-              (int) statistics_requests_factory<F>::stat_requests::best_fitness_stat,
-              (int) statistics_requests_factory<F>::stat_requests::average_fitness_stat,
-              (int) statistics_requests_factory<F>::stat_requests::selection_pressure_stat
-          })
+                  1,
+                  3,
+                  0,
+                  0,
+                  0,
+                  3,
+                  1,
+                  1,
+                  2,
+                  2
+          }
   };
-  
+
+  evolution_statistics<F> _statistics{
+          2,
+          std::initializer_list<int>(
+                  {
+                          (int) statistics_requests_factory<F>::stat_requests::best_fitness_stat,
+                          (int) statistics_requests_factory<F>::stat_requests::average_fitness_stat,
+                          (int) statistics_requests_factory<F>::stat_requests::selection_pressure_stat
+                  }
+          )
+  };
+
   unique_ptr<genome_generator<F>> _genome_generator;
-  
+
 };
 
 using floating_point_types = ::testing::Types<long double, double, float>;
@@ -216,9 +227,11 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, truncation_selection_for_reproduc
   auto selected_individuals = selection(this->_population);
   ASSERT_EQ(selected_individuals.size(), selection_size);
   for (size_t i = selection_size; i < this->_population.size(); i++) {
-    EXPECT_TRUE(std::all_of(selected_individuals.begin(), selected_individuals.end(), [&](auto& individual) {
-      return individual->overall_fitness() < this->_population[i]->overall_fitness();
-    }));
+    EXPECT_TRUE(std::all_of(
+            selected_individuals.begin(), selected_individuals.end(), [&](auto& individual) {
+              return individual->overall_fitness() < this->_population[i]->overall_fitness();
+            }
+    ));
   }
 }
 
@@ -335,14 +348,13 @@ template<floating_point_type F>
 static constexpr F tolerance()
 {
   switch (sizeof(F)) {
-    case sizeof(float):
-      return 1E-4;
-    case sizeof(double):
-      return 1E-8;
-    case sizeof(long double):
-      return 1E-16;
+  case sizeof(float):
+    return 1E-4;
+  case sizeof(double):
+    return 1E-8;
+  default:
+    return 1E-16;
   }
-  return 1E-6;
 }
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_linear_crossover)
@@ -353,15 +365,15 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_linear_crossover)
     uniform_linear_crossover<TypeParam> crossover(1., 2);
     auto genome = crossover(*individual_a, *individual_b);
     auto midpoint = (individual_b->genome() + individual_a->genome()) / 2;
-    
+
     auto genome_diff = genome - midpoint;
-    
+
     auto diff_a = individual_a->genome() - midpoint;
     auto ratio_a = diff_a.cwiseQuotient(genome_diff);
     ASSERT_GE(diff_a.norm(), genome_diff.norm());
-    
+
     for (long j{1}; j < genome.size(); j++) EXPECT_NEAR(ratio_a(j) / ratio_a(0), 1., tolerance<TypeParam>());
-    
+
     auto diff_b = individual_b->genome() - midpoint;
     auto ratio_b = diff_b.cwiseQuotient(genome_diff);
     ASSERT_GE(diff_b.norm(), genome_diff.norm());
@@ -380,24 +392,24 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_voluminal_crossover)
     uniform_voluminal_crossover<TypeParam> crossover(1., 2);
     auto genome = crossover(*individual_a, *individual_b);
     auto midpoint = (individual_b->genome() + individual_a->genome()) / 2;
-    
+
     auto genome_diff = genome - midpoint;
-    
+
     auto diff_a = individual_a->genome() - midpoint;
     auto ratio_a = diff_a.cwiseQuotient(genome_diff);
     ASSERT_GE(diff_a.norm(), genome_diff.norm());
     for (long j{1}; j < genome.size(); j++)
       EXPECT_TRUE(std::abs(std::abs(ratio_a(j) / ratio_a(0)) - 1.) > 1E-5)
-                << "ratio_a(" << j << "): " << ratio_a(j)
-                << "\nratio_a(0): " << ratio_a(0);
-    
+                  << "ratio_a(" << j << "): " << ratio_a(j)
+                  << "\nratio_a(0): " << ratio_a(0);
+
     auto diff_b = individual_b->genome() - midpoint;
     auto ratio_b = diff_b.cwiseQuotient(genome_diff);
     ASSERT_GE(diff_b.norm(), genome_diff.norm());
     for (long j{1}; j < genome.size(); j++)
       EXPECT_TRUE(std::abs(std::abs(ratio_b(j) / ratio_b(0)) - 1.) > 1E-5)
-                << "ratio_b(" << j << "): " << ratio_b(j)
-                << "\nratio_b(0): " << ratio_b(0);
+                  << "ratio_b(" << j << "): " << ratio_b(j)
+                  << "\nratio_b(0): " << ratio_b(0);
   }
 }
 
@@ -410,14 +422,14 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, gaussian_mutation)
     for (size_t i{0}; i < repetitions; i++) genome += mutation(*individual);
     genome /= TypeParam(repetitions);
     EXPECT_TRUE(genome.isApprox(individual->genome(), 1E-2))
-              << genome.transpose() << '\n' << individual->genome().transpose();
+                << genome.transpose() << '\n' << individual->genome().transpose();
   }
 }
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_mutation)
 {
   vector<TypeParam> factors{
-      {1., 2., 3., 4., 5., 6.}
+          {1., 2., 3., 4., 5., 6.}
   };
   for (auto& factor : factors) {
     for (auto& individual : this->_population) {
@@ -428,7 +440,6 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_mutation)
     }
   }
 }
-
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, population_initialization)
 {
@@ -456,15 +467,14 @@ public:
     }
     return objective_index;
   }
-  
+
   [[nodiscard]] size_t objective_count() const override
   {
     return _f_ptr.size();
   }
-  
+
   explicit benchmark_function_evaluation(const vector<F (*)(const Eigen::VectorX<F>&)>& f_ptr)
-      : _f_ptr(f_ptr)
-  {}
+          :_f_ptr(f_ptr) { }
 
 private:
   vector<F (*)(const Eigen::VectorX<F>&)> _f_ptr;
@@ -565,12 +575,13 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, selection_pressure_termination_po
   this->_statistics.register_statistic(this->_population);
   selection_pressure_termination<TypeParam> termination(0.1);
   ASSERT_TRUE(termination(this->_statistics))
-                << "Selection pressure: " << selection_pressure_request<TypeParam>{}(this->_population)
-                << "\nAverage fitness: " << average_fitness_request<TypeParam>{}(this->_population)
-                << "\nBest fitness: " << best_fitness_request<TypeParam>{}(this->_population)
-                << "\nStatistics Selection pressure: "
-                << this->_statistics.current_value(
-                    (int) statistics_requests_factory<TypeParam>::stat_requests::selection_pressure_stat);
+                      << "Selection pressure: " << selection_pressure_request<TypeParam>{}(this->_population)
+                      << "\nAverage fitness: " << average_fitness_request<TypeParam>{}(this->_population)
+                      << "\nBest fitness: " << best_fitness_request<TypeParam>{}(this->_population)
+                      << "\nStatistics Selection pressure: "
+                      << this->_statistics.current_value(
+                              (int) statistics_requests_factory<TypeParam>::stat_requests::selection_pressure_stat
+                      );
 }
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, selection_pressure_termination_negative)
@@ -579,7 +590,6 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, selection_pressure_termination_ne
   selection_pressure_termination<TypeParam> termination(1.);
   ASSERT_FALSE(termination(this->_statistics));
 }
-
 
 template<floating_point_type F>
 class sphere_evaluation_function : public base_evaluation<F> {
@@ -590,14 +600,14 @@ public:
     objective_index++;
     return objective_index;
   }
-  
+
   [[nodiscard]] size_t objective_count() const override
   {
     return 1;
   }
-  
+
   explicit sphere_evaluation_function() = default;
-  
+
 };
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run)
@@ -608,13 +618,13 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run)
   genome_gen->append_chromosome_generator(std::make_unique<chromosome_generator_impl<TypeParam>>(-5., 5.));
   setup<TypeParam> s;
   s.set_population_size(10)
-      .set_generations(20)
-      .set_selection_for_reproduction(std::make_unique<truncation_selection_for_reproduction<TypeParam>>(4))
-      .set_selection_for_replacement(std::make_unique<truncation_selection_for_replacement<TypeParam>>(6))
-      .set_crossover(std::make_unique<uniform_linear_crossover<TypeParam>>(1.))
-      .set_mutation(std::make_unique<uniform_mutation<TypeParam>>(.05, 1.))
-      .set_genome_generator(std::move(genome_gen))
-      .add_evaluation(std::make_unique<sphere_evaluation_function<TypeParam>>());
+          .set_generations(20)
+          .set_selection_for_reproduction(std::make_unique<truncation_selection_for_reproduction<TypeParam>>(4))
+          .set_selection_for_replacement(std::make_unique<truncation_selection_for_replacement<TypeParam>>(6))
+          .set_crossover(std::make_unique<uniform_linear_crossover<TypeParam>>(1.))
+          .set_mutation(std::make_unique<uniform_mutation<TypeParam>>(.05, 1.))
+          .set_genome_generator(std::move(genome_gen))
+          .add_evaluation(std::make_unique<sphere_evaluation_function<TypeParam>>());
   runner<TypeParam> r(std::move(s));
   r.add_log_stream(std::cout);
   ASSERT_EQ(r.run(), runner<TypeParam>::successful_exit);

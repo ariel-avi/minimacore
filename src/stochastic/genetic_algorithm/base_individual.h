@@ -25,14 +25,11 @@ public:
     return _fitness_values.sum();
   }
   
-  bool operator<(const base_individual& other) const
+  auto operator<=>(const base_individual& other) const
   {
-    return overall_fitness() < other.overall_fitness();
-  }
-  
-  bool operator==(const base_individual& other) const
-  {
-    return overall_fitness() == other.overall_fitness();
+    if (overall_fitness() < other.overall_fitness()) return -1;
+    if (overall_fitness() > other.overall_fitness()) return 1;
+    return 0;
   }
   
   void set_objective_fitness(size_t index, F value)

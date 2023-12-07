@@ -20,7 +20,7 @@ jobs:
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 
       - name: Build (Coverage)
-        run: cmake --build build --config Debug --target mbsolve_coverage
+        run: cmake --build build --config Debug --target minimacore_coverage
 
       - name: Archive Coverage Reports
         uses: actions/upload-artifact@v2

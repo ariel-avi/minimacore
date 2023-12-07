@@ -28,5 +28,5 @@ jobs:
       - name: Archive Test Outputs
         uses: actions/upload-artifact@v2
         with:
-          name: mbsolve_tests_report
+          name: minimacore_tests_report
           path: build/tests/out.xml

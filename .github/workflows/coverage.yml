@@ -30,7 +30,7 @@ jobs:
 
       - name: Build
         run: |
-          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ --config Debug
+          build-wrapper-linux-x86-64 --out-dir "./wrapper-output-dir/" cmake --build build/ --config Debug
 
       - name: Build and measure
         run: sh ci/coverage.sh
@@ -55,5 +55,5 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }} # Put the name of your token here
         run: |
           sonar-scanner \
-            --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}" \
+            --define sonar.cfamily.build-wrapper-output="./wrapper-output-dir/" \
             --define sonar.coverageReportPaths=sonar-coverage.xml

@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <ranges>
 #include "test_functions.h"
-#include <genetic_algorithm_base.h>
+#include <runner.h>
 
 using namespace minimacore::genetic_algorithm;
 
@@ -616,6 +616,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run)
       .set_genome_generator(std::move(genome_gen))
       .add_evaluation(std::make_unique<sphere_evaluation_function<TypeParam>>());
   runner<TypeParam> r(std::move(s));
+  r.add_log_stream(std::cout);
   ASSERT_EQ(r.run(), runner<TypeParam>::successful_exit);
   ASSERT_LT(r.get_best_individual()->overall_fitness(), r.get_individual_zero()->overall_fitness());
 }

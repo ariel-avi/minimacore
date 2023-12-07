@@ -1,6 +1,6 @@
 
-#ifndef MINIMACORE_GENETIC_ALGORITHM_BASE_H
-#define MINIMACORE_GENETIC_ALGORITHM_BASE_H
+#ifndef MINIMACORE_RUNNER_H
+#define MINIMACORE_RUNNER_H
 
 #include "selection_operators.h"
 #include "genetic_operators.h"
@@ -8,6 +8,7 @@
 #include "base_individual_generator.h"
 #include "termination_condition.h"
 #include "setup.h"
+#include <logger.h>
 
 #include <minimacore_concepts.h>
 
@@ -25,17 +26,10 @@ public:
   
   exit_code run()
   {
+    _log << logger::uts_timestamp() << "Starting genetic algorithm...\n";
     initialize_individual_zero();
-    std::cout << "initializing population\n";
     initialize_population();
     _statistics.register_statistic(_population);
-    std::cout << "current generation: " << _statistics.current_generation() << '\n';
-    std::cout << "current fitness: " << _statistics.current_value(
-        (int) statistics_requests_factory<F>::stat_requests::best_fitness_stat)
-              << '\n';
-    std::cout << "average fitness: " << _statistics.current_value(
-        (int) statistics_requests_factory<F>::stat_requests::average_fitness_stat)
-              << '\n';
     _setup.add_termination(std::make_unique<generation_termination<F>>(_setup.generations()));
     while (std::none_of(std::execution::par_unseq,
                         _setup.termination_conditions().begin(),
@@ -46,14 +40,9 @@ public:
       fill_population(reproduction_set);
       _statistics.register_statistic(_population);
       update_best_individual();
-      std::cout << "current generation: " << _statistics.current_generation() << '\n';
-      std::cout << "current fitness: "
-                << _statistics.current_value((int) statistics_requests_factory<F>::stat_requests::best_fitness_stat)
-                << '\n';
-      std::cout << "average fitness: "
-                << _statistics.current_value((int) statistics_requests_factory<F>::stat_requests::average_fitness_stat)
-                << '\n';
+      _log << logger::uts_timestamp() << "Generation " << _statistics.current_generation() << " complete\n";
     }
+    _log << logger::uts_timestamp() << "Genetic algorithm complete, exit code: " << successful_exit << '\n';
     return successful_exit;
   }
   
@@ -65,6 +54,11 @@ public:
   const shared_ptr<base_individual<F>>& get_individual_zero() const
   {
     return _individual_zero;
+  }
+  
+  void add_log_stream(std::ostream& stream)
+  {
+    _log.add_stream(stream);
   }
   
   explicit runner(setup<F> setup)
@@ -93,16 +87,18 @@ private:
   
   void initialize_individual_zero()
   {
+    _log << logger::uts_timestamp() << "Initializing individual zero\n";
     _individual_zero = std::make_shared<base_individual<F>>(
         _setup.get_genome_generator().initial_genome(),
         objective_count()
     );
     evaluate(_individual_zero);
-    std::cout << "Individual zero fitness: " << _individual_zero->overall_fitness() << '\n';
+    _log << logger::uts_timestamp() << "Individual zero fitness: " << _individual_zero->overall_fitness() << '\n';
   }
   
   void initialize_population()
   {
+    _log << logger::uts_timestamp() << "Initializing population, size = " << _setup.population_size() << '\n';
     while (_population.size() < _setup.population_size()) {
       auto& individual = _population.emplace_back(
           std::make_shared<base_individual<F>>(
@@ -150,7 +146,8 @@ private:
   individual_ptr<F> _individual_zero{nullptr};
   evolution_statistics<F> _statistics;
   setup<F> _setup;
+  logger _log;
 };
   
 }
-#endif //MINIMACORE_GENETIC_ALGORITHM_BASE_H
+#endif //MINIMACORE_RUNNER_H

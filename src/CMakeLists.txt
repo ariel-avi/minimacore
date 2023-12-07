@@ -1,3 +1,4 @@
+add_subdirectory(utils)
 add_subdirectory(stochastic)
 add_library(minimacore_base_concepts INTERFACE )
 add_library(minimacore::base_concepts ALIAS minimacore_base_concepts)

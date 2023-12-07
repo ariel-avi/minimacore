@@ -133,7 +133,8 @@ public:
                                         (int) statistics_requests_factory<F>::stat_requests::average_fitness_stat,
                                         (int) statistics_requests_factory<F>::stat_requests::best_fitness_stat
                                     }
-                                })
+                                }
+                                )
       : _statistics{maximum_generations, Eigen::Index(requests.size())},
         _requests{std::move(requests)}
   {}

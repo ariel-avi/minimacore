@@ -21,7 +21,7 @@ protected:
     _unique_sorted_ranks.shrink_to_fit();
     for (size_t i = 0; i < 10; i++) {
       auto& ind = _population.emplace_back(
-          std::make_shared<individual_impl>(Eigen::VectorX<F>::Random(3), _functions.size()));
+          std::make_shared<individual_impl>(Eigen::VectorX<F>::Random(2), _functions.size()));
       ind->set_objective_fitness(0, _fitness_values[0][i]);
       ind->set_objective_fitness(1, _fitness_values[1][i]);
     }
@@ -113,7 +113,7 @@ protected:
   
   vector<size_t> _unique_sorted_ranks;
   
-  vector<F (*)(const Eigen::VectorX<F>&)> _functions{{&rastrigin, &sphere, &rosenbrock}};
+  vector<F (*)(const Eigen::VectorX<F>&)> _functions{{&rastrigin, &rosenbrock}};
   
   // Two objectives (fitness values) for each individual in the population, to constitute multi-objectiveness
   vector<vector<F>> _fitness_values{

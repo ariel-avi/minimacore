@@ -27,7 +27,7 @@ if (GTest_FOUND)
       EXECUTABLE ${PROJECT_NAME}_tests
       EXCLUDE "/usr/*" "include/*")
   elseif (UNIX AND "${CMAKE_BUILD_TYPE}" MATCHES "^Coverage")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} --coverage -fno-inline -fno-inline-small-functions -fno-default-inline")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} --coverage -fno-inline -fno-inline-small-functions -fno-default-inline -fprofile-arcs")
   endif ()
 
 else ()

@@ -49,7 +49,13 @@ public:
     return _fitness_values(index);
   }
   
-  const genome_t<F>& get_genome() const {
+  const genome_t<F>& genome() const
+  {
+    return _genome;
+  }
+  
+  genome_t<F>& genome()
+  {
     return _genome;
   }
   

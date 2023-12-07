@@ -28,8 +28,8 @@ public:
     std::random_device device;
     std::mt19937_64 gen(device());
     F factor = _alpha * distribution(gen);
-    auto midpoint = (a.get_genome() + b.get_genome()) / 2.;
-    auto difference = b.get_genome() - midpoint;
+    auto midpoint = (a.genome() + b.genome()) / 2.;
+    auto difference = b.genome() - midpoint;
     return midpoint + factor * difference;
   };
   
@@ -48,10 +48,10 @@ public:
     std::uniform_real_distribution<F> distribution(-1., 1.);
     std::random_device device;
     std::mt19937_64 gen(device());
-    genome_t<F> result = (a.get_genome() + b.get_genome()) / 2.;
+    genome_t<F> result = (a.genome() + b.genome()) / 2.;
     for (long i = 0; i < result.size(); i++) {
       F factor = _alpha * distribution(gen);
-      result(i) = result(i) + (b.get_genome()(i) - result(i)) * factor;
+      result(i) = result(i) + (b.genome()(i) - result(i)) * factor;
     }
     return result;
   };
@@ -88,7 +88,7 @@ public:
     std::normal_distribution<F> distribution(0., _std_dev);
     std::random_device device;
     std::mt19937_64 gen(device());
-    genome_t<F> cpy(individual.get_genome());
+    genome_t<F> cpy(individual.genome());
     for (long i = 0; i < cpy.size(); i++) cpy(i) += distribution(gen);
     return cpy;
   }
@@ -108,7 +108,7 @@ public:
     std::uniform_real_distribution<F> distribution(-1., 1.);
     std::random_device device;
     std::mt19937_64 gen(device());
-    genome_t<F> cpy(individual.get_genome());
+    genome_t<F> cpy(individual.genome());
     for (long i = 0; i < cpy.size(); i++) cpy(i) += distribution(gen) * _factor;
     return cpy;
   }

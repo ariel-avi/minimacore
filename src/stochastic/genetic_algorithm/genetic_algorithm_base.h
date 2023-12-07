@@ -5,6 +5,7 @@
 #include "selection_operators.h"
 #include "genetic_operators.h"
 #include "base_evaluation.h"
+#include "base_individual_generator.h"
 
 #include <minimacore_concepts.h>
 

@@ -309,17 +309,17 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_linear_crossover)
     const auto& individual_b = this->_population[i + this->_population.size() / 2];
     uniform_linear_crossover<TypeParam> crossover(1.);
     auto genome = crossover(*individual_a, *individual_b);
-    auto midpoint = (individual_b->get_genome() + individual_a->get_genome()) / 2;
+    auto midpoint = (individual_b->genome() + individual_a->genome()) / 2;
     
     auto genome_diff = genome - midpoint;
     
-    auto diff_a = individual_a->get_genome() - midpoint;
+    auto diff_a = individual_a->genome() - midpoint;
     auto ratio_a = diff_a.cwiseQuotient(genome_diff);
     ASSERT_GE(diff_a.norm(), genome_diff.norm());
     
     for (long j{1}; j < genome.size(); j++) EXPECT_NEAR(ratio_a(j) / ratio_a(0), 1., tolerance<TypeParam>());
     
-    auto diff_b = individual_b->get_genome() - midpoint;
+    auto diff_b = individual_b->genome() - midpoint;
     auto ratio_b = diff_b.cwiseQuotient(genome_diff);
     ASSERT_GE(diff_b.norm(), genome_diff.norm());
     for (long j{1}; j < genome.size(); j++) EXPECT_NEAR(ratio_b(j) / ratio_b(0), 1., tolerance<TypeParam>());
@@ -336,11 +336,11 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_voluminal_crossover)
     const auto& individual_b = this->_population[i + this->_population.size() / 2];
     uniform_voluminal_crossover<TypeParam> crossover(1.);
     auto genome = crossover(*individual_a, *individual_b);
-    auto midpoint = (individual_b->get_genome() + individual_a->get_genome()) / 2;
+    auto midpoint = (individual_b->genome() + individual_a->genome()) / 2;
     
     auto genome_diff = genome - midpoint;
     
-    auto diff_a = individual_a->get_genome() - midpoint;
+    auto diff_a = individual_a->genome() - midpoint;
     auto ratio_a = diff_a.cwiseQuotient(genome_diff);
     ASSERT_GE(diff_a.norm(), genome_diff.norm());
     for (long j{1}; j < genome.size(); j++)
@@ -348,7 +348,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_voluminal_crossover)
                 << "ratio_a(" << j << "): " << ratio_a(j)
                 << "\nratio_a(0): " << ratio_a(0);
     
-    auto diff_b = individual_b->get_genome() - midpoint;
+    auto diff_b = individual_b->genome() - midpoint;
     auto ratio_b = diff_b.cwiseQuotient(genome_diff);
     ASSERT_GE(diff_b.norm(), genome_diff.norm());
     for (long j{1}; j < genome.size(); j++)
@@ -363,11 +363,11 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, gaussian_mutation)
   const size_t repetitions{1'000};
   for (auto& individual : this->_population) {
     gaussian_mutation<TypeParam> mutation(0.05, 1E-2);
-    genome_t<TypeParam> genome = genome_t<TypeParam>::Zero(individual->get_genome().size());
+    genome_t<TypeParam> genome = genome_t<TypeParam>::Zero(individual->genome().size());
     for (size_t i{0}; i < repetitions; i++) genome += mutation(*individual);
     genome /= TypeParam(repetitions);
-    EXPECT_TRUE(genome.isApprox(individual->get_genome(), 1E-2))
-              << genome.transpose() << '\n' << individual->get_genome().transpose();
+    EXPECT_TRUE(genome.isApprox(individual->genome(), 1E-2))
+              << genome.transpose() << '\n' << individual->genome().transpose();
   }
 }
 
@@ -380,8 +380,46 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_mutation)
     for (auto& individual : this->_population) {
       uniform_mutation<TypeParam> mutation(0.05, factor);
       genome_t<TypeParam> genome = mutation(*individual);
-      auto diff = individual->get_genome() - genome;
+      auto diff = individual->genome() - genome;
       for (size_t i{0}; i < genome.size(); i++) EXPECT_LE(diff(i), factor);
+    }
+  }
+}
+
+template<floating_point_type F>
+class genome_generator : public base_genome_generator<F> {
+public:
+  void operator()(const individual_ptr<F>& individual) const override
+  {
+    std::random_device device;
+    std::mt19937_64 generator(device());
+    std::uniform_real_distribution<F> dist(lower_limit, upper_limit);
+    for (auto i{0}; i < individual->genome().size(); i++) individual->genome()(i) = dist(generator);
+  }
+  
+  genome_generator(F lower_limit, F upper_limit)
+      : lower_limit(lower_limit), upper_limit(upper_limit)
+  {}
+
+private:
+  F lower_limit, upper_limit;
+};
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, population_generator)
+{
+  auto& population = this->_population;
+  population_generator<TypeParam> generator;
+  generator.append_genome_generator(std::make_unique<genome_generator<TypeParam>>(-5.28, 5.28));
+  vector<Eigen::VectorX<TypeParam>> original_genomes;
+  for (auto& individual : population) original_genomes.push_back(individual->genome());
+  ASSERT_EQ(original_genomes.size(), population.size());
+  generator(population);
+  for (size_t i{0UL}; i < original_genomes.size(); i++) {
+    auto& genome = population[i]->genome();
+    EXPECT_FALSE(original_genomes[i].isApprox(genome));
+    for (auto j{0}; j < genome.size(); j++) {
+      EXPECT_GE(genome(j), -5.28);
+      EXPECT_LE(genome(j), 5.28);
     }
   }
 }
@@ -391,12 +429,11 @@ class benchmark_function_evaluation : base_evaluation<F> {
 public:
   size_t operator()(base_individual<F>& individual, size_t objective_index) const override
   {
-    size_t i{objective_index};
     for (auto& f : _f_ptr) {
-      individual.set_objective_fitness(i, std::abs(f(individual.get_genome())));
-      i++;
+      individual.set_objective_fitness(objective_index, std::abs(f(individual.genome())));
+      objective_index++;
     }
-    return i;
+    return objective_index;
   }
   
   explicit benchmark_function_evaluation(const vector<F (*)(const Eigen::VectorX<F>&)>& f_ptr) : _f_ptr(f_ptr)

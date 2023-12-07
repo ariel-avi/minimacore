@@ -1,3 +1,3 @@
-./build/tests/minimacore_tests
-gcovr --exclude='tests/src/*' --exclude='build/*' --xml > cobertura-coverage.xml
+./build/coverage/tests/minimacore_tests
+gcovr --filter='src/' --xml-pretty > cobertura-coverage.xml
 return 0

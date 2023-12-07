@@ -76,7 +76,7 @@ protected:
     std::ranges::for_each(selected,
                           [test_set](auto& individual) {
                             EXPECT_TRUE(std::find(test_set.begin(), test_set.end(), individual) != test_set.end())
-                                      << "Couldn't find " << individual << " in test set.";
+                                      << "Couldn't find " << individual << " in test add_evaluation.";
                           });
   }
   
@@ -127,7 +127,7 @@ protected:
     std::ranges::for_each(top_rank,
                           [test_set](auto& individual) {
                             EXPECT_TRUE(std::find(test_set.begin(), test_set.end(), individual) != test_set.end())
-                                      << "Couldn't find " << individual << " in test set.";
+                                      << "Couldn't find " << individual << " in test add_evaluation.";
                           });
   }
   
@@ -192,13 +192,13 @@ protected:
   };
   
   evolution_statistics<F> _statistics{
+      2,
       std::initializer_list<int>(
           {
               statistics_requests_factory<F>::best_fitness_stat,
               statistics_requests_factory<F>::average_fitness_stat,
               statistics_requests_factory<F>::selection_pressure_stat
-          }),
-      2
+          })
   };
   
   unique_ptr<genome_generator<F>> _genome_generator;
@@ -445,7 +445,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, population_initialization)
 }
 
 template<floating_point_type F>
-class benchmark_function_evaluation : base_evaluation<F> {
+class benchmark_function_evaluation : public base_evaluation<F> {
 public:
   size_t operator()(base_individual<F>& individual, size_t objective_index) const override
   {
@@ -458,10 +458,11 @@ public:
   
   [[nodiscard]] size_t objective_count() const override
   {
-    return 1;
+    return _f_ptr.size();
   }
   
-  explicit benchmark_function_evaluation(const vector<F (*)(const Eigen::VectorX<F>&)>& f_ptr) : _f_ptr(f_ptr)
+  explicit benchmark_function_evaluation(const vector<F (*)(const Eigen::VectorX<F>&)>& f_ptr)
+      : _f_ptr(f_ptr)
   {}
 
 private:
@@ -572,6 +573,46 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, selection_pressure_termination)
                   << "\nStatistics Selection pressure: "
                   << this->_statistics.current_value(statistics_requests_factory<TypeParam>::selection_pressure_stat);
   }
+}
+
+
+template<floating_point_type F>
+class sphere_evaluation_function : public base_evaluation<F> {
+public:
+  size_t operator()(base_individual<F>& individual, size_t objective_index) const override
+  {
+    individual.set_objective_fitness(objective_index, std::abs(sphere(individual.genome())));
+    objective_index++;
+    return objective_index;
+  }
+  
+  [[nodiscard]] size_t objective_count() const override
+  {
+    return 1;
+  }
+  
+  explicit sphere_evaluation_function() = default;
+  
+};
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run)
+{
+  vector f = this->_functions;
+  auto genome_gen = std::make_unique<genome_generator<TypeParam>>(Eigen::VectorX<TypeParam>::Random(3));
+  genome_gen->append_chromosome_generator(std::make_unique<chromosome_generator_impl<TypeParam>>(-5., 5.));
+  setup<TypeParam> s;
+  s.set_population_size(10)
+      .set_generations(10)
+      .set_selection_for_reproduction(std::make_unique<truncation_selection_for_reproduction<TypeParam>>(4))
+      .set_selection_for_replacement(std::make_unique<truncation_selection_for_replacement<TypeParam>>(6))
+      .set_crossover(std::make_unique<uniform_linear_crossover<TypeParam>>(1.))
+      .set_mutation(std::make_unique<uniform_mutation<TypeParam>>(.05, 1.))
+      .set_genome_generator(std::move(genome_gen))
+      .add_termination(std::make_unique<generation_termination<TypeParam>>(10))
+      .add_evaluation(std::make_unique<sphere_evaluation_function<TypeParam>>());
+  runner<TypeParam> r(&s);
+  r.run();
+  
 }
 
 

@@ -116,7 +116,8 @@ public:
     return _statistics.block(0, statistic, _generation, 1);
   }
   
-  F current_value(int statistic) const {
+  F current_value(int statistic) const
+  {
     return _statistics(_generation - 1, statistic);
   }
   
@@ -125,7 +126,11 @@ public:
     return _generation >= _statistics.rows() ? _generation : ++_generation;
   }
   
-  explicit evolution_statistics(vector<int> requests, Eigen::Index maximum_generations)
+  explicit evolution_statistics(Eigen::Index maximum_generations,
+                                vector<int> requests = vector<int>{
+                                    std::initializer_list<int>{statistics_requests_factory<F>::best_fitness_stat,
+                                                               statistics_requests_factory<F>::average_fitness_stat,
+                                                               statistics_requests_factory<F>::best_fitness_stat}})
       : _statistics{maximum_generations, Eigen::Index(requests.size())},
         _requests{std::move(requests)}
   {}

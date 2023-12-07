@@ -5,6 +5,7 @@
 #include <Eigen/Dense>
 #include <memory>
 #include <vector>
+#include <random>
 #include <minimacore_concepts.h>
 
 namespace minimacore::genetic_algorithm {
@@ -59,13 +60,16 @@ public:
     return _genome;
   }
   
-  [[nodiscard]] bool is_valid() const {
+  [[nodiscard]] bool is_valid() const
+  {
     return _fitness_values.allFinite();
   }
   
   explicit base_individual(genome_t<F> genome, long objective_count)
       : _genome(genome), _fitness_values(objective_count)
-  {}
+  {
+    _fitness_values.setConstant(NAN);
+  }
 
 protected:
   genome_t<F> _genome;
@@ -75,6 +79,15 @@ protected:
 template<floating_point_type F> using individual_ptr = shared_ptr<base_individual<F>>;
 template<floating_point_type F> using population_t = vector<individual_ptr<F>>;
 template<floating_point_type F> using reproduction_selection_t = vector<individual_ptr<F>>;
+
+template<floating_point_type F>
+static const individual_ptr<F>& random_pick(const population_t<F>& selection_set)
+{
+  std::random_device device{};
+  std::mt19937_64 generator{device()};
+  std::uniform_int_distribution<size_t> distribution{0, selection_set.size() - 1};
+  return selection_set[distribution(generator)];
+}
 
 }
 #endif //MINIMACORE_BASE_INDIVIDUAL_H

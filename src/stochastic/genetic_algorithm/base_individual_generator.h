@@ -22,26 +22,28 @@ class genome_generator {
 public:
   individual_ptr<F>& operator()(individual_ptr<F>& individual) const
   {
-    for (auto& generator : _genome_generators)
+    for (auto& generator : _chromosome_generators)
       generator->generate_chromosome(individual);
     return individual;
   }
   
   void append_chromosome_generator(chromosome_generator_ptr<F> chromosome_generator)
   {
-    _genome_generators.push_back(std::move(chromosome_generator));
+    _chromosome_generators.push_back(std::move(chromosome_generator));
   }
   
-  const Eigen::VectorX<F>& initial_genome() {
+  const Eigen::VectorX<F>& initial_genome() const
+  {
     return _initial_genome;
   }
   
-  explicit genome_generator(const Eigen::VectorX<F>& initial_genome) : _initial_genome(initial_genome)
+  explicit genome_generator(const Eigen::VectorX<F>& initial_genome)
+      : _initial_genome(initial_genome)
   {}
 
 private:
   Eigen::VectorX<F> _initial_genome;
-  vector<chromosome_generator_ptr<F>> _genome_generators;
+  vector<chromosome_generator_ptr<F>> _chromosome_generators;
 };
 
 }

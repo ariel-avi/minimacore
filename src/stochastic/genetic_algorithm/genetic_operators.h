@@ -68,6 +68,15 @@ class mutation {
 public:
   virtual genome_t<F> operator()(const base_individual<F>& individual) const = 0;
   
+  [[nodiscard]] bool should_mutate() const
+  {
+    std::random_device device{};
+    std::mt19937_64 generator{device()};
+    std::uniform_real_distribution<F> distribution(0., 1.);
+    F chance = distribution(generator);
+    return chance <= _rate;
+  }
+  
   [[nodiscard]] F get_rate() const
   {
     return _rate;
@@ -115,7 +124,7 @@ public:
   
   uniform_mutation(F rate, F factor) : mutation<F>(rate), _factor(factor)
   {}
-  
+
 private:
   F _factor;
 };

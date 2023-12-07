@@ -10,6 +10,8 @@ template<floating_point_type F>
 class termination_condition_base {
 public:
   virtual bool operator()(const evolution_statistics<F>& statistics) const = 0;
+  
+  virtual ~termination_condition_base() = default;
 };
 
 template<floating_point_type F>

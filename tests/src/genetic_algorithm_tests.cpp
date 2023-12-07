@@ -1,8 +1,7 @@
 
 #include <gtest/gtest.h>
-#include <source_location>
 #include <ranges>
-#include "genetic_algorithm_base.h"
+#include <genetic_algorithm_base.h>
 
 using namespace minimacore::genetic_algorithm;
 
@@ -26,7 +25,7 @@ protected:
     }
   }
   
-  void test_ranked_selection_by_ranks(size_t rank_count)
+  void test_ranked_selection_for_reproduction_by_ranks(size_t rank_count)
   {
     reproduction_selection_t<F> test_set;
     for (auto& rank_i : _unique_sorted_ranks) {
@@ -38,7 +37,7 @@ protected:
     }
     
     ranked_selection_for_reproduction<F> selection_for_reproduction(
-        rank_count, ranked_selection_for_reproduction<F>::select_by_ranks);
+        rank_count, ranked_selection::select_by_ranks);
     reproduction_selection_t<F> top_rank = selection_for_reproduction(_population);
     ASSERT_EQ(top_rank.size(), test_set.size()) << "Rank count: " << rank_count;
     
@@ -49,7 +48,35 @@ protected:
                           });
   }
   
-  void test_ranked_selection_by_individuals(size_t individual_count)
+  void test_ranked_selection_for_replacement_by_ranks(size_t rank_count)
+  {
+    reproduction_selection_t<F> test_set;
+    size_t count{0};
+    for (auto& rank_i : std::ranges::reverse_view(_unique_sorted_ranks)) {
+      if (count < rank_count) {
+        for (size_t i{_ranks.size() - 1}; i != 0; i--) {
+          if (_ranks[i] == rank_i) test_set.push_back(_population[i]);
+        }
+        count++;
+      }
+    }
+    ranked_selection_for_replacement<F> selection(
+        rank_count, ranked_selection::select_by_ranks);
+    selection(_population);
+    ASSERT_EQ(_population.size() + test_set.size(), _ranks.size())
+                  << "Rank count: " << rank_count
+                  << "\nTest Size: " << test_set.size()
+                  << "\nPopulation size: " << _population.size();
+    
+    std::ranges::for_each(test_set,
+                          [&](auto& individual) {
+                            EXPECT_TRUE(
+                                std::find(_population.begin(), _population.end(), individual) == _population.end())
+                                      << "Found " << individual << " in population.";
+                          });
+  }
+  
+  void test_ranked_selection_for_reproduction_by_individuals(size_t individual_count)
   {
     reproduction_selection_t<F> test_set;
     for (auto& rank_i : _unique_sorted_ranks) {
@@ -61,7 +88,7 @@ protected:
     }
     
     ranked_selection_for_reproduction<F> selection_for_reproduction(
-        individual_count, ranked_selection_for_reproduction<F>::select_by_individuals);
+        individual_count, ranked_selection::select_by_individuals);
     reproduction_selection_t<F> top_rank = selection_for_reproduction(_population);
     ASSERT_NE(top_rank.size(), test_set.size());
     
@@ -145,16 +172,20 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, tournament_selection_for_reproduc
   for (auto& i : selected_individuals) ASSERT_NE(i, this->_population[5]);
 }
 
-TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_reproduction)
+TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_reproduction_by_ranks)
 {
-  this->test_ranked_selection_by_ranks(1);
-  this->test_ranked_selection_by_ranks(2);
-  this->test_ranked_selection_by_ranks(3);
-  this->test_ranked_selection_by_ranks(4);
-  this->test_ranked_selection_by_individuals(2);
-  this->test_ranked_selection_by_individuals(4);
-  this->test_ranked_selection_by_individuals(7);
-  this->test_ranked_selection_by_individuals(9);
+  this->test_ranked_selection_for_reproduction_by_ranks(1);
+  this->test_ranked_selection_for_reproduction_by_ranks(2);
+  this->test_ranked_selection_for_reproduction_by_ranks(3);
+  this->test_ranked_selection_for_reproduction_by_ranks(4);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_reproduction_by_individuals)
+{
+  this->test_ranked_selection_for_reproduction_by_individuals(2);
+  this->test_ranked_selection_for_reproduction_by_individuals(4);
+  this->test_ranked_selection_for_reproduction_by_individuals(7);
+  this->test_ranked_selection_for_reproduction_by_individuals(9);
 }
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, generational_selection_for_replacement)
@@ -173,7 +204,6 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, truncation_selection_for_replacem
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, ranked_selection_for_replacement)
 {
-  ranked_selection_for_replacement<TypeParam> replacement(1, ranked_selection::select_by_ranks);
-  replacement(this->_population);
+  this->test_ranked_selection_for_replacement_by_ranks(1);
 }
 

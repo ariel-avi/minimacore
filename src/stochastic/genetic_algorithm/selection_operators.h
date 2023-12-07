@@ -95,20 +95,36 @@ public:
   template<floating_point_type F>
   static bool is_dominant(const individual_ptr<F>& individual, const reproduction_selection_t<F>& subgroup)
   {
-    std::atomic_bool is_pareto_front = true;
-    std::for_each(std::execution::par_unseq,
-                  subgroup.begin(),
-                  subgroup.end(),
-                  [&](const auto& comparison) {
-                    if (individual != comparison) {
-                      std::atomic_bool is_lower_rank = true;
-                      for (size_t i = 0; i < individual->get_fitness_values().size(); i++) {
-                        is_lower_rank = is_lower_rank && individual->fitness_value(i) > comparison->fitness_value(i);
-                      }
-                      is_pareto_front = is_pareto_front && !is_lower_rank;
-                    }
-                  });
-    return is_pareto_front;
+    return !std::any_of(std::execution::par_unseq,
+                        subgroup.begin(),
+                        subgroup.end(),
+                        [&](const auto& comparison) {
+                          if (individual != comparison) {
+                            bool is_dominant{true};
+                            for (size_t i = 0; i < individual->get_fitness_values().size(); i++)
+                              is_dominant = is_dominant &&
+                                            individual->fitness_value(i) > comparison->fitness_value(i);
+                            return is_dominant;
+                          }
+                        });
+  }
+  
+  template<floating_point_type F>
+  static bool is_dominated(const individual_ptr<F>& individual, const reproduction_selection_t<F>& subgroup)
+  {
+    return !std::any_of(std::execution::par_unseq,
+                        subgroup.begin(),
+                        subgroup.end(),
+                        [&](const auto& comparison) {
+                          if (individual != comparison) {
+                            std::atomic_bool is_fully_dominated{true};
+                            for (size_t i = 0; i < individual->get_fitness_values().size(); i++)
+                              is_fully_dominated = is_fully_dominated &&
+                                                   individual->fitness_value(i) < comparison->fitness_value(i);
+                            return is_fully_dominated.load();
+                          }
+                          return false;
+                        });
   }
 
 protected:
@@ -126,10 +142,13 @@ public:
   reproduction_selection_t<F> operator()(population_t<F>& population) const override
   {
     reproduction_selection_t<F> result;
-    size_t selected_amount = 0;
+    size_t selected_amount{0};
+    int count{0};
     while (selected_amount < _selection_size) {
       reproduction_selection_t<F> subgroup;
-      std::for_each(std::execution::par_unseq, population.begin(), population.end(),
+      std::for_each(std::execution::par_unseq,
+                    population.begin(),
+                    population.end(),
                     [&result, &subgroup](auto& individual) {
                       if (std::find_if(std::execution::par_unseq,
                                        result.begin(),
@@ -139,9 +158,8 @@ public:
                                        }) == result.end())
                         subgroup.push_back(individual);
                     });
-      
       for (auto& subgroup_individual : subgroup) {
-        if (is_dominant<F>(subgroup_individual, subgroup)) {
+        if (is_dominant(subgroup_individual, subgroup)) {
           result.push_back(subgroup_individual);
           if (_select_by == select_by_individuals && ++selected_amount < _selection_size) return result;
         }
@@ -201,6 +219,25 @@ class ranked_selection_for_replacement : public base_selection_for_replacement<F
 public:
   population_t<F>& operator()(population_t<F>& population) const override
   {
+    reproduction_selection_t<F> result;
+    vector<reproduction_selection_t<F>> ranks;
+    while (!population.empty()) {
+      auto& current_rank = ranks.emplace_back();
+      for (auto& individual : population) {
+        if (is_dominant(individual, population)) current_rank.push_back(individual);
+      }
+      std::erase_if(population, [&current_rank](const auto& individual) {
+        return std::find(current_rank.begin(), current_rank.end(), individual) != current_rank.end();
+      });
+    }
+    
+    size_t i{0};
+    while (ranks.size() - i > _selection_size) {
+      auto& rank = ranks[i++];
+      std::for_each(rank.begin(),
+                    rank.end(),
+                    [&population, &rank](const auto& individual) { population.push_back(individual); });
+    }
     return population;
   }
   

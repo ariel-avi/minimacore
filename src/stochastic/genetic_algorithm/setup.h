@@ -14,13 +14,13 @@ template<floating_point_type F>
 class setup {
   using selection_for_replacement_ptr = unique_ptr<base_selection_for_replacement<F>>;
   using selection_for_reproduction_ptr = unique_ptr<base_selection_for_reproduction<F>>;
-  using mutation_ptr = unique_ptr<mutation < F>>;
+  using mutation_ptr = unique_ptr<base_mutation<F>>;
   using crossover_ptr = unique_ptr<base_crossover<F>>;
-  using genome_generator_ptr = unique_ptr<genome_generator < F>>;
+  using genome_generator_ptr = unique_ptr<genome_generator<F>>;
   using evaluation_t = unique_ptr<base_evaluation<F>>;
   using evaluations_t = vector<evaluation_t>;
   using termination_conditions_t = vector<termination_condition_ptr<F>>;
-  
+
 public:
   [[nodiscard]] size_t population_size() const
   {
@@ -47,12 +47,12 @@ public:
     return *_crossover;
   }
   
-  const mutation <F>& get_mutation() const
+  const base_mutation<F>& get_mutation() const
   {
     return *_mutation;
   }
   
-  const genome_generator <F>& get_genome_generator() const
+  const genome_generator<F>& get_genome_generator() const
   {
     return *_genome_generator;
   }
@@ -120,10 +120,44 @@ public:
     _evaluations.emplace_back(std::move(evaluation));
     return *this;
   }
+  
+  setup(setup&& other) noexcept
+  {
+    _population_size = other._population_size;
+    _generations = other._generations;
+    _selection_for_replacement = std::move(other._selection_for_replacement);
+    _selection_for_reproduction = std::move(other._selection_for_reproduction);
+    _crossover = std::move(other._crossover);
+    _mutation = std::move(other._mutation);
+    _genome_generator = std::move(other._genome_generator);
+    _termination_conditions = std::move(other._termination_conditions);
+    _evaluations = std::move(other._evaluations);
+  }
+  
+  setup(const setup& other) = delete;
+  
+  setup& operator=(setup&& other) noexcept
+  {
+    _population_size = other._population_size;
+    _generations = other._generations;
+    _selection_for_replacement = std::move(other._selection_for_replacement);
+    _selection_for_reproduction = std::move(other._selection_for_reproduction);
+    _crossover = std::move(other._crossover);
+    _mutation = std::move(other._mutation);
+    _genome_generator = std::move(other._genome_generator);
+    _termination_conditions = std::move(other._termination_conditions);
+    _evaluations = std::move(other._evaluations);
+  }
+  
+  setup& operator=(const setup& other) = delete;
+  
+  setup() = default;
+  
+  ~setup() = default;
 
 private:
-  size_t _population_size;
-  size_t _generations;
+  size_t _population_size{0};
+  size_t _generations{0};
   selection_for_replacement_ptr _selection_for_replacement;
   selection_for_reproduction_ptr _selection_for_reproduction;
   crossover_ptr _crossover;

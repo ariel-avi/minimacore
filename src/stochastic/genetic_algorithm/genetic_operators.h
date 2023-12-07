@@ -64,7 +64,7 @@ private:
 };
 
 template<floating_point_type F>
-class mutation {
+class base_mutation {
 public:
   virtual genome_t<F> operator()(const base_individual<F>& individual) const = 0;
   
@@ -82,15 +82,17 @@ public:
     return _rate;
   }
   
-  explicit mutation(F rate) : _rate(rate)
+  explicit base_mutation(F rate) : _rate(rate)
   {}
+  
+  virtual ~base_mutation() = default;
 
 private:
   F _rate;
 };
 
 template<floating_point_type F>
-class gaussian_mutation : public mutation<F> {
+class gaussian_mutation : public base_mutation<F> {
 public:
   genome_t<F> operator()(const base_individual<F>& individual) const override
   {
@@ -102,7 +104,7 @@ public:
     return cpy;
   }
   
-  gaussian_mutation(F rate, F std_dev) : mutation<F>(rate), _std_dev(std_dev)
+  gaussian_mutation(F rate, F std_dev) : base_mutation<F>(rate), _std_dev(std_dev)
   {}
 
 private:
@@ -110,7 +112,7 @@ private:
 };
 
 template<floating_point_type F>
-class uniform_mutation : public mutation<F> {
+class uniform_mutation : public base_mutation<F> {
 public:
   genome_t<F> operator()(const base_individual<F>& individual) const override
   {
@@ -122,7 +124,7 @@ public:
     return cpy;
   }
   
-  uniform_mutation(F rate, F factor) : mutation<F>(rate), _factor(factor)
+  uniform_mutation(F rate, F factor) : base_mutation<F>(rate), _factor(factor)
   {}
 
 private:

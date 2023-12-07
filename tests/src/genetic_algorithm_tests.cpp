@@ -598,21 +598,21 @@ public:
 TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run)
 {
   vector f = this->_functions;
-  auto genome_gen = std::make_unique<genome_generator<TypeParam>>(Eigen::VectorX<TypeParam>::Random(3));
+  Eigen::VectorX<TypeParam> initial_genome = Eigen::VectorX<TypeParam>::Constant(3, 5.);
+  auto genome_gen = std::make_unique<genome_generator<TypeParam>>(initial_genome);
   genome_gen->append_chromosome_generator(std::make_unique<chromosome_generator_impl<TypeParam>>(-5., 5.));
   setup<TypeParam> s;
   s.set_population_size(10)
-      .set_generations(10)
+      .set_generations(20)
       .set_selection_for_reproduction(std::make_unique<truncation_selection_for_reproduction<TypeParam>>(4))
       .set_selection_for_replacement(std::make_unique<truncation_selection_for_replacement<TypeParam>>(6))
       .set_crossover(std::make_unique<uniform_linear_crossover<TypeParam>>(1.))
       .set_mutation(std::make_unique<uniform_mutation<TypeParam>>(.05, 1.))
       .set_genome_generator(std::move(genome_gen))
-      .add_termination(std::make_unique<generation_termination<TypeParam>>(10))
       .add_evaluation(std::make_unique<sphere_evaluation_function<TypeParam>>());
-  runner<TypeParam> r(&s);
-  r.run();
-  
+  runner<TypeParam> r(std::move(s));
+  ASSERT_EQ(r.run(), runner<TypeParam>::successful_exit);
+  ASSERT_LT(r.get_best_individual()->overall_fitness(), r.get_individual_zero()->overall_fitness());
 }
 
 

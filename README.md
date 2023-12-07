@@ -69,6 +69,7 @@ We decided to use Eigen3 as the matrix and vector operation calculations. Some r
 
 Anyone is encouraged to contribute, that is with algorithms, CMake scripts or case studies.
 
+- Please refer and always use [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines).
 - We target a code coverage of 100%, despite knowing that sometimes that is utopian.
 - Code Style: code-style consistency is important to keep a sense of freshness in the library.
     - If you use JetBrains IDEs, you can import the code style from [resources](resources/minimacore-code-style.xml)

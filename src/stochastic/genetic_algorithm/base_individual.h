@@ -66,13 +66,5 @@ template<floating_point_type F> using individual_ptr = shared_ptr<base_individua
 template<floating_point_type F> using population_t = vector<individual_ptr<F>>;
 template<floating_point_type F> using reproduction_selection_t = vector<individual_ptr<F>>;
 
-template<floating_point_type F, typename T>
-class individual_converter {
-public:
-  virtual T convert(const genome_t<F>& genome) const = 0;
-  
-  virtual genome_t<F> convert(const T& optimization_object) const = 0;
-};
-
 }
 #endif //MINIMACORE_BASE_INDIVIDUAL_H

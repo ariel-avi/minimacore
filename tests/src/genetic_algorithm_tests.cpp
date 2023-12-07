@@ -1,6 +1,7 @@
 
 #include <gtest/gtest.h>
 #include <ranges>
+#include "test_functions.h"
 #include <genetic_algorithm_base.h>
 
 using namespace minimacore::genetic_algorithm;
@@ -19,7 +20,8 @@ protected:
     _unique_sorted_ranks.erase(end, _unique_sorted_ranks.end());
     _unique_sorted_ranks.shrink_to_fit();
     for (size_t i = 0; i < 10; i++) {
-      auto& ind = _population.emplace_back(std::make_shared<individual_impl>(Eigen::VectorX<F>::Random(3), 2));
+      auto& ind = _population.emplace_back(
+          std::make_shared<individual_impl>(Eigen::VectorX<F>::Random(3), _functions.size()));
       ind->set_objective_fitness(0, _fitness_values[0][i]);
       ind->set_objective_fitness(1, _fitness_values[1][i]);
     }
@@ -110,6 +112,8 @@ protected:
   population_t<F> _population;
   
   vector<size_t> _unique_sorted_ranks;
+  
+  vector<F (*)(const Eigen::VectorX<F>&)> _functions{{&rastrigin, &sphere, &rosenbrock}};
   
   // Two objectives (fitness values) for each individual in the population, to constitute multi-objectiveness
   vector<vector<F>> _fitness_values{
@@ -359,6 +363,35 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_mutation)
       auto diff = individual->get_genome() - genome;
       for (size_t i{0}; i < genome.size(); i++) EXPECT_LE(diff(i), factor);
     }
+  }
+}
+
+template<floating_point_type F>
+class benchmark_function_evaluation : base_evaluation<F> {
+public:
+  size_t operator()(base_individual<F>& individual, size_t objective_index) const override
+  {
+    size_t i{objective_index};
+    for (auto& f : _f_ptr) {
+      individual.set_objective_fitness(i, std::abs(f(individual.get_genome())));
+      i++;
+    }
+    return i;
+  }
+  
+  explicit benchmark_function_evaluation(const vector<F (*)(const Eigen::VectorX<F>&)>& f_ptr) : _f_ptr(f_ptr)
+  {}
+
+private:
+  vector<F (*)(const Eigen::VectorX<F>&)> _f_ptr;
+};
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, benchmark_function_evaluation)
+{
+  benchmark_function_evaluation<TypeParam> evaluation(this->_functions);
+  for (auto& individual : this->_population) {
+    EXPECT_EQ(evaluation(*individual, 0), this->_functions.size());
+    EXPECT_FALSE(individual->overall_fitness() < 1E-6);
   }
 }
 

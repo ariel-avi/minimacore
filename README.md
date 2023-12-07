@@ -2,6 +2,8 @@
 
 MinimaCore is an open-source modern C++ optimization library (C++20 or later).
 
+[![Run Unit Tests](https://github.com/ariel-avi/minimacore/actions/workflows/tests.yml/badge.svg)](https://github.com/ariel-avi/minimacore/actions/workflows/tests.yml)
+
 # Authors
 
 The library was conceptualized by Ariel Avi and Pedro Stella. Any contribution is encouraged.

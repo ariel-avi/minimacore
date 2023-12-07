@@ -6,9 +6,7 @@
 #include <type_traits>
 #include <Eigen/Dense>
 #include <iostream>
-
-template<typename T>
-concept floating_point_type = std::is_floating_point_v<T>;
+#include <minimacore_concepts.h>
 
 template<floating_point_type T>
 inline T square(T value)
@@ -39,7 +37,7 @@ template<floating_point_type T>
 inline T sphere(const Eigen::VectorX<T>& input)
 {
   T result = 0.;
-  for (std::size_t i = 0; i < input.size(); i++) result += square(input(i));
+  for (size_t i = 0; i < input.size(); i++) result += square(input(i));
   return result;
 }
 
@@ -47,7 +45,7 @@ template<floating_point_type T>
 inline T rosenbrock(const Eigen::VectorX<T>& input)
 {
   T result = 0;
-  for (std::size_t i = 0; i < (input.size() - 1); i++)
+  for (size_t i = 0; i < (input.size() - 1); i++)
     result += 100 * square(input(i + 1) - square(input(i))) +
               square(1 - square(input(i)));
   return result;

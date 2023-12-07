@@ -4,6 +4,7 @@
 
 #include "selection_operators.h"
 #include "genetic_operators.h"
+#include "base_evaluation.h"
 
 #include <minimacore_concepts.h>
 
@@ -11,10 +12,7 @@ namespace minimacore::genetic_algorithm {
 
 template<floating_point_type F, typename T>
 class setup {
-public:
 
-private:
-  unique_ptr<individual_converter<F, T>> _factory;
 };
 
 }

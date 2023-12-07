@@ -10,5 +10,14 @@ fetchcontent_declare(
 fetchcontent_makeavailable(GTest)
 
 if (GTest_FOUND)
-    # TODO: Add tests
+    include(GoogleTest)
+    set(_TESTS_TARGET ${PROJECT_NAME}_tests)
+
+    add_executable(${_TESTS_TARGET}
+            src/base_tests.cpp
+            src/genetic_algorithm_tests.cpp)
+
+    target_link_libraries(${_TESTS_TARGET} GTest::gtest_main GTest::gtest Eigen3::Eigen)
+
+    gtest_discover_tests(${_TESTS_TARGET})
 endif ()

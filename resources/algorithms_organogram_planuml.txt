@@ -1,0 +1,16 @@
+@startwbs
+!theme vibrant
+
+skin rose
+
+* Optimization Algorithms
+**< Deterministic
+***< Trust Region
+*** Gauss-Newton
+***> Levenberg-Marquardt (damped least-squares)
+**> Stochastic
+***< Genetic Algorithm
+*** Differential Evolution
+***> Particle Swarm Optimization
+
+@endwbs

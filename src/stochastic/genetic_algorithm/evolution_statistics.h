@@ -69,7 +69,7 @@ using statistic_request_ptr = unique_ptr<statistic_request_base<F>>;
 template<floating_point_type F>
 class statistics_requests_factory {
 public:
-  enum stat_requests {
+  enum class stat_requests {
     best_fitness_stat = 0,
     average_fitness_stat,
     selection_pressure_stat,
@@ -77,14 +77,14 @@ public:
   
   virtual statistic_request_ptr<F> make(int request)
   {
-    switch (request) {
-      case best_fitness_stat: {
+    switch ((stat_requests) request) {
+      case stat_requests::best_fitness_stat: {
         return std::make_unique<best_fitness_request<F>>();
       }
-      case average_fitness_stat: {
+      case stat_requests::average_fitness_stat: {
         return std::make_unique<average_fitness_request<F>>();
       }
-      case selection_pressure_stat: {
+      case stat_requests::selection_pressure_stat: {
         return std::make_unique<selection_pressure_request<F>>();
       }
       default:
@@ -128,9 +128,12 @@ public:
   
   explicit evolution_statistics(Eigen::Index maximum_generations,
                                 vector<int> requests = vector<int>{
-                                    std::initializer_list<int>{statistics_requests_factory<F>::best_fitness_stat,
-                                                               statistics_requests_factory<F>::average_fitness_stat,
-                                                               statistics_requests_factory<F>::best_fitness_stat}})
+                                    std::initializer_list<int>{
+                                        (int) statistics_requests_factory<F>::stat_requests::best_fitness_stat,
+                                        (int) statistics_requests_factory<F>::stat_requests::average_fitness_stat,
+                                        (int) statistics_requests_factory<F>::stat_requests::best_fitness_stat
+                                    }
+                                })
       : _statistics{maximum_generations, Eigen::Index(requests.size())},
         _requests{std::move(requests)}
   {}

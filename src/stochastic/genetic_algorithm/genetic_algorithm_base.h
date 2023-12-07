@@ -30,9 +30,11 @@ public:
     initialize_population();
     _statistics.register_statistic(_population);
     std::cout << "current generation: " << _statistics.current_generation() << '\n';
-    std::cout << "current fitness: " << _statistics.current_value(statistics_requests_factory<F>::best_fitness_stat)
+    std::cout << "current fitness: " << _statistics.current_value(
+        (int) statistics_requests_factory<F>::stat_requests::best_fitness_stat)
               << '\n';
-    std::cout << "average fitness: " << _statistics.current_value(statistics_requests_factory<F>::average_fitness_stat)
+    std::cout << "average fitness: " << _statistics.current_value(
+        (int) statistics_requests_factory<F>::stat_requests::average_fitness_stat)
               << '\n';
     _setup.add_termination(std::make_unique<generation_termination<F>>(_setup.generations()));
     while (std::none_of(std::execution::par_unseq,
@@ -45,10 +47,11 @@ public:
       _statistics.register_statistic(_population);
       update_best_individual();
       std::cout << "current generation: " << _statistics.current_generation() << '\n';
-      std::cout << "current fitness: " << _statistics.current_value(statistics_requests_factory<F>::best_fitness_stat)
+      std::cout << "current fitness: "
+                << _statistics.current_value((int) statistics_requests_factory<F>::stat_requests::best_fitness_stat)
                 << '\n';
       std::cout << "average fitness: "
-                << _statistics.current_value(statistics_requests_factory<F>::average_fitness_stat)
+                << _statistics.current_value((int) statistics_requests_factory<F>::stat_requests::average_fitness_stat)
                 << '\n';
     }
     return successful_exit;

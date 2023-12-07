@@ -195,9 +195,9 @@ protected:
       2,
       std::initializer_list<int>(
           {
-              statistics_requests_factory<F>::best_fitness_stat,
-              statistics_requests_factory<F>::average_fitness_stat,
-              statistics_requests_factory<F>::selection_pressure_stat
+              (int) statistics_requests_factory<F>::stat_requests::best_fitness_stat,
+              (int) statistics_requests_factory<F>::stat_requests::average_fitness_stat,
+              (int) statistics_requests_factory<F>::stat_requests::selection_pressure_stat
           })
   };
   
@@ -504,14 +504,14 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, evolution_statistics)
   ASSERT_EQ(this->_statistics.current_generation(), 0);
   this->_statistics.register_statistic(this->_population);
   {
-    auto best_fitness_stat = this->_statistics[statistics_requests_factory<TypeParam>::best_fitness_stat];
+    auto best_fitness_stat = this->_statistics[(int) statistics_requests_factory<TypeParam>::stat_requests::best_fitness_stat];
     EXPECT_NEAR(best_fitness_stat(this->_statistics.current_generation() - 1, 0), 0.7, 1E-6);
     EXPECT_EQ(best_fitness_stat.rows(), 1);
   }
   ASSERT_EQ(this->_statistics.current_generation(), 1);
   this->_statistics.register_statistic(this->_population);
   {
-    auto best_fitness_stat = this->_statistics[statistics_requests_factory<TypeParam>::best_fitness_stat];
+    auto best_fitness_stat = this->_statistics[(int) statistics_requests_factory<TypeParam>::stat_requests::best_fitness_stat];
     EXPECT_NEAR(best_fitness_stat(this->_statistics.current_generation() - 1, 0), 0.7, 1E-6);
     EXPECT_EQ(best_fitness_stat.rows(), 2);
   }
@@ -571,7 +571,8 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, selection_pressure_termination)
                   << "\nAverage fitness: " << average_fitness_request<TypeParam>{}(this->_population)
                   << "\nBest fitness: " << best_fitness_request<TypeParam>{}(this->_population)
                   << "\nStatistics Selection pressure: "
-                  << this->_statistics.current_value(statistics_requests_factory<TypeParam>::selection_pressure_stat);
+                  << this->_statistics.current_value(
+                      (int) statistics_requests_factory<TypeParam>::stat_requests::selection_pressure_stat);
   }
 }
 

@@ -37,7 +37,8 @@ class average_fitness_termination : public termination_condition_base<F> {
 public:
   bool operator()(const evolution_statistics<F>& statistics) const override
   {
-    return statistics.current_value((size_t) statistics_requests_factory<F>::best_fitness_stat) < _max_avg_fitness;
+    return statistics.current_value((size_t) statistics_requests_factory<F>::stat_requests::best_fitness_stat) <
+           _max_avg_fitness;
   }
   
   explicit average_fitness_termination(F max_avg_fitness) : _max_avg_fitness(max_avg_fitness)
@@ -52,7 +53,8 @@ class best_fitness_termination : public termination_condition_base<F> {
 public:
   bool operator()(const evolution_statistics<F>& statistics) const override
   {
-    return statistics.current_value((size_t) statistics_requests_factory<F>::best_fitness_stat) < _max_best_fitness;
+    return statistics.current_value((size_t) statistics_requests_factory<F>::stat_requests::best_fitness_stat) <
+           _max_best_fitness;
   }
   
   explicit best_fitness_termination(F max_best_fitness) : _max_best_fitness(max_best_fitness)
@@ -67,7 +69,7 @@ class selection_pressure_termination : public termination_condition_base<F> {
 public:
   bool operator()(const evolution_statistics<F>& statistics) const override
   {
-    return statistics.current_value((size_t) statistics_requests_factory<F>::selection_pressure_stat) >
+    return statistics.current_value((size_t) statistics_requests_factory<F>::stat_requests::selection_pressure_stat) >
            _min_selection_pressure;
   }
   

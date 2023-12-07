@@ -26,11 +26,10 @@ jobs:
         run: pip install gcovr==5.0 #5.1 not supported
 
       - name: Configure CMake
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE="Coverage"
 
       - name: Build
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE="Coverage"
           build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ --config Debug
 
       - name: Build and measure

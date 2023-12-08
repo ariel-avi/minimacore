@@ -55,10 +55,15 @@ public:
     _cond_var.notify_one();
   }
 
-  ~thread_pool()
+  void stop()
   {
     _stop = true;
     _cond_var.notify_all();
+  }
+
+  ~thread_pool()
+  {
+    stop();
     for (auto& t : _threads) t.join();
   }
 

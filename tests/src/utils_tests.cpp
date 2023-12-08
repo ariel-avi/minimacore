@@ -6,20 +6,20 @@
 
 using namespace minimacore;
 
+static std::atomic_int counter{0};
 
-void do_work(std::atomic_int& counter)
+int do_work(int a)
 {
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  counter++;
+  return ++counter;
 }
 
 TEST(ThreadPool, RunConcurrently)
 {
-  static std::atomic_int counter{0};
 
   thread_pool pool(2);
   for (size_t i = 0; i < 4; i++)
-    pool.enqueue(&do_work, counter);
+    auto fut = pool.enqueue(&do_work, 0);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(150));
   EXPECT_LT(counter, 4);
@@ -27,7 +27,7 @@ TEST(ThreadPool, RunConcurrently)
   EXPECT_EQ(counter, 4);
 
   for (size_t i = 0; i < 4; i++)
-    pool.enqueue(&do_work, counter);
+    auto fut = pool.enqueue(&do_work, 0);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(150));
   EXPECT_LT(counter, 8);

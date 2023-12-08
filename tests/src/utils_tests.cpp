@@ -8,7 +8,7 @@ using namespace minimacore;
 
 static std::atomic_int counter{0};
 
-int do_work(int a)
+void do_work()
 {
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   return ++counter;
@@ -19,7 +19,7 @@ TEST(ThreadPool, RunConcurrently)
 
   thread_pool pool(2);
   for (size_t i = 0; i < 4; i++)
-    auto fut = pool.enqueue(&do_work, 0);
+    auto fut = pool.enqueue(&do_work);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(150));
   EXPECT_LT(counter, 4);
@@ -27,7 +27,7 @@ TEST(ThreadPool, RunConcurrently)
   EXPECT_EQ(counter, 4);
 
   for (size_t i = 0; i < 4; i++)
-    auto fut = pool.enqueue(&do_work, 0);
+    auto fut = pool.enqueue(&do_work);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(150));
   EXPECT_LT(counter, 8);

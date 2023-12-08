@@ -1,7 +1,7 @@
 if (BUILD_SHARED_LIBS)
     add_library(minimacore_utils SHARED logger.cpp)
 else ()
-    add_library(minimacore_utils STATIC logger.cpp)
+    add_library(minimacore_utils STATIC logger.cpp thread_pool.h)
 endif ()
 add_library(minimacore::utils ALIAS minimacore_utils)
 target_include_directories(minimacore_utils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

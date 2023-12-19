@@ -6,7 +6,7 @@
 
 using namespace minimacore;
 
-class ThreadPoolTests : public ::testing::Test {
+class thread_pool_tests : public ::testing::Test {
 protected:
   std::atomic_int counter{0};
 
@@ -18,12 +18,12 @@ public:
   }
 };
 
-TEST_F(ThreadPoolTests, RunConcurrently)
+TEST_F(thread_pool_tests, run_concurrently)
 {
 
   thread_pool pool(2);
   for (size_t i = 0; i < 4; i++)
-    auto fut = pool.enqueue(&ThreadPoolTests::do_work, this);
+    auto fut = pool.enqueue(&thread_pool_tests::do_work, this);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(150));
   EXPECT_LT(counter, 4);
@@ -31,7 +31,7 @@ TEST_F(ThreadPoolTests, RunConcurrently)
   EXPECT_EQ(counter, 4);
 
   for (size_t i = 0; i < 4; i++)
-    auto fut = pool.enqueue(&ThreadPoolTests::do_work, this);
+    auto fut = pool.enqueue(&thread_pool_tests::do_work, this);
 
   std::this_thread::sleep_for(std::chrono::milliseconds(150));
   EXPECT_LT(counter, 8);

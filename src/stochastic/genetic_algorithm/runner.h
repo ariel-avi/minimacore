@@ -23,7 +23,7 @@ public:
     successful_exit = 0,
     failed_exit
   };
-  
+
   exit_code run()
   {
     _log << logger::wrapped_uts_timestamp() << "Starting genetic algorithm...\n";
@@ -45,22 +45,29 @@ public:
     _log << logger::wrapped_uts_timestamp() << "Genetic algorithm complete, exit code: " << successful_exit << '\n';
     return successful_exit;
   }
-  
+
   const shared_ptr<base_individual<F>>& get_best_individual() const
   {
     return _best_individual;
   }
-  
+
   const shared_ptr<base_individual<F>>& get_individual_zero() const
   {
     return _individual_zero;
   }
-  
+
   void add_log_stream(std::ostream& stream)
   {
     _log.add_stream(stream);
   }
-  
+
+  void export_statistics(const string& filename, char sep)
+  {
+    std::ofstream ofs(filename, std::ios::out);
+    if (!ofs.is_open() || ofs.bad()) return;
+    _statistics.write(ofs, sep);
+  }
+
   explicit runner(setup<F> setup)
       : _statistics(setup.generations()),
         _setup(std::move(setup))
@@ -76,7 +83,7 @@ private:
         [](size_t i, const evaluation_t& eval) { return i + eval->objective_count(); }
     );
   }
-  
+
   void evaluate(const individual_ptr<F>& individual)
   {
     while (!individual->is_valid()) {
@@ -84,7 +91,7 @@ private:
       for (auto& evaluation : _setup.evaluations()) dummy = (*evaluation)(*individual, dummy);
     }
   }
-  
+
   void initialize_individual_zero()
   {
     _log << logger::wrapped_uts_timestamp() << "Initializing individual zero\n";
@@ -95,7 +102,7 @@ private:
     evaluate(_individual_zero);
     _log << logger::wrapped_uts_timestamp() << "Individual zero fitness: " << _individual_zero->overall_fitness() << '\n';
   }
-  
+
   void initialize_population()
   {
     _log << logger::wrapped_uts_timestamp() << "Initializing population, size = " << _setup.population_size() << '\n';
@@ -111,7 +118,7 @@ private:
     }
     update_best_individual();
   }
-  
+
   void fill_population(population_t<F>& reproduction_set)
   {
     std::random_device device{};
@@ -133,14 +140,14 @@ private:
       _population.push_back(individual);
     }
   }
-  
+
   void update_best_individual()
   {
     _best_individual = std::ranges::min(_population, [](auto& a, auto& b) {
       return a->overall_fitness() < b->overall_fitness();
     });
   }
-  
+
   population_t<F> _population;
   individual_ptr<F> _best_individual{nullptr};
   individual_ptr<F> _individual_zero{nullptr};
@@ -148,6 +155,6 @@ private:
   setup<F> _setup;
   logger _log;
 };
-  
+
 }
 #endif //MINIMACORE_RUNNER_H

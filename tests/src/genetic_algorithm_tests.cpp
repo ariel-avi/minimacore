@@ -629,6 +629,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run)
   r.add_log_stream(std::cout);
   ASSERT_EQ(r.run(), runner<TypeParam>::successful_exit);
   ASSERT_LT(r.get_best_individual()->overall_fitness(), r.get_individual_zero()->overall_fitness());
+  r.export_statistics("statistics.csv", ',');
 }
 
 

@@ -31,10 +31,12 @@ public:
     initialize_population();
     _statistics.register_statistic(_population);
     _setup.add_termination(std::make_unique<generation_termination<F>>(_setup.generations()));
-    while (std::none_of(std::execution::par_unseq,
-                        _setup.termination_conditions().begin(),
-                        _setup.termination_conditions().end(),
-                        [this](auto& condition) { return (*condition)(_statistics); })) {
+    while (std::none_of(
+            std::execution::par_unseq,
+            _setup.termination_conditions().begin(),
+            _setup.termination_conditions().end(),
+            [this](auto& condition) { return (*condition)(_statistics); }
+    )) {
       auto reproduction_set = _setup.selection_for_reproduction()(_population);
       _setup.selection_for_replacement()(_population);
       fill_population(reproduction_set);
@@ -69,18 +71,17 @@ public:
   }
 
   explicit runner(setup<F> setup)
-      : _statistics(setup.generations()),
-        _setup(std::move(setup))
-  {}
+          :_statistics(setup.generations()),
+           _setup(std::move(setup)) { }
 
 private:
   [[nodiscard]] size_t objective_count() const
   {
     return std::accumulate(
-        _setup.evaluations().begin(),
-        _setup.evaluations().end(),
-        0,
-        [](size_t i, const evaluation_t& eval) { return i + eval->objective_count(); }
+            _setup.evaluations().begin(),
+            _setup.evaluations().end(),
+            0,
+            [](size_t i, const evaluation_t& eval) { return i + eval->objective_count(); }
     );
   }
 
@@ -96,11 +97,12 @@ private:
   {
     _log << logger::wrapped_uts_timestamp() << "Initializing individual zero\n";
     _individual_zero = std::make_shared<base_individual<F>>(
-        _setup.get_genome_generator().initial_genome(),
-        objective_count()
+            _setup.get_genome_generator().initial_genome(),
+            objective_count()
     );
     evaluate(_individual_zero);
-    _log << logger::wrapped_uts_timestamp() << "Individual zero fitness: " << _individual_zero->overall_fitness() << '\n';
+    _log << logger::wrapped_uts_timestamp() << "Individual zero fitness: " << _individual_zero->overall_fitness()
+         << '\n';
   }
 
   void initialize_population()
@@ -108,10 +110,10 @@ private:
     _log << logger::wrapped_uts_timestamp() << "Initializing population, size = " << _setup.population_size() << '\n';
     while (_population.size() < _setup.population_size()) {
       auto& individual = _population.emplace_back(
-          std::make_shared<base_individual<F>>(
-              _setup.get_genome_generator().initial_genome(),
-              objective_count()
-          )
+              std::make_shared<base_individual<F>>(
+                      _setup.get_genome_generator().initial_genome(),
+                      objective_count()
+              )
       );
       _setup.get_genome_generator()(individual);
       evaluate(individual);
@@ -129,12 +131,13 @@ private:
       individual_ptr<F> individual;
       if (_setup.get_mutation().should_mutate()) {
         individual = std::make_shared<base_individual<F>>(
-            _setup.get_mutation()(*random_pick(reproduction_set)),
-            objective_count());
-      } else {
+                _setup.get_mutation()(*random_pick(reproduction_set)),
+                objective_count());
+      }
+      else {
         individual = std::make_shared<base_individual<F>>(
-            _setup.crossover()(*random_pick(reproduction_set), *random_pick(reproduction_set)),
-            objective_count());
+                _setup.crossover()(*random_pick(reproduction_set), *random_pick(reproduction_set)),
+                objective_count());
       }
       evaluate(individual);
       _population.push_back(individual);
@@ -143,9 +146,11 @@ private:
 
   void update_best_individual()
   {
-    _best_individual = std::ranges::min(_population, [](auto& a, auto& b) {
-      return a->overall_fitness() < b->overall_fitness();
-    });
+    _best_individual = std::ranges::min(
+            _population, [](auto& a, auto& b) {
+              return a->overall_fitness() < b->overall_fitness();
+            }
+    );
   }
 
   population_t<F> _population;

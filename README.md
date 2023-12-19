@@ -1,6 +1,6 @@
 # minimacore
 
-MinimaCore is an open-source modern C++ optimization library (C++20 or later).
+MinimaCore is an open-source modern C++ numerical optimization library (C++20 or later).
 
 [![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-black.svg)](https://sonarcloud.io/summary/new_code?id=ariel-avi_minimacore)
 

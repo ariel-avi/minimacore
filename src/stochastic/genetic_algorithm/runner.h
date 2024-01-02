@@ -9,10 +9,12 @@
 #include "termination_condition.h"
 #include "setup.h"
 #include <logger.h>
-
+#include <functional>
 #include <minimacore_concepts.h>
 
 namespace minimacore::genetic_algorithm {
+
+using std::function;
 
 template<floating_point_type F>
 class runner {
@@ -24,28 +26,104 @@ public:
     failed_exit
   };
 
+  enum class state {
+    waiting = 0,
+    running,
+    pausing,
+    paused,
+    stopping,
+    stopped,
+    done
+  };
+
   exit_code run()
   {
+    if (_state != state::waiting) return exit_code::failed_exit;
+    _state = state::running;
     _log << logger::wrapped_uts_timestamp() << "Starting genetic algorithm...\n";
     initialize_individual_zero();
     initialize_population();
     _statistics.register_statistic(_population);
     _setup.add_termination(std::make_unique<generation_termination<F>>(_setup.generations()));
-    while (std::none_of(
-            std::execution::par_unseq,
-            _setup.termination_conditions().begin(),
-            _setup.termination_conditions().end(),
-            [this](auto& condition) { return (*condition)(_statistics); }
-    )) {
-      auto reproduction_set = _setup.selection_for_reproduction()(_population);
-      _setup.selection_for_replacement()(_population);
-      fill_population(reproduction_set);
-      _statistics.register_statistic(_population);
-      update_best_individual();
-      _log << logger::wrapped_uts_timestamp() << "Generation " << _statistics.current_generation() << " complete\n";
+    while (
+            std::none_of(
+                    std::execution::par_unseq,
+                    _setup.termination_conditions().begin(),
+                    _setup.termination_conditions().end(),
+                    [this](auto& condition) { return (*condition)(_statistics); }
+            )
+            ) {
+      switch (_state) {
+      case state::running: {
+        auto reproduction_set = _setup.selection_for_reproduction()(_population);
+        _setup.selection_for_replacement()(_population);
+        fill_population(reproduction_set);
+        _statistics.register_statistic(_population);
+        update_best_individual();
+        _log << logger::wrapped_uts_timestamp() << "Generation " << _statistics.current_generation() << " complete\n";
+        break;
+      }
+      case state::pausing: {
+        _state = state::paused;
+        break;
+      }
+      case state::paused: {
+        continue;
+      }
+      case state::stopping: {
+        _state = state::stopped;
+        break;
+      }
+      case state::stopped: {
+        _log << logger::wrapped_uts_timestamp() << "Genetic successfully stopped, exit code: " << successful_exit
+             << '\n';
+        return successful_exit;
+      }
+      default:
+        break;
+      }
     }
+    _state = state::done;
     _log << logger::wrapped_uts_timestamp() << "Genetic algorithm complete, exit code: " << successful_exit << '\n';
     return successful_exit;
+  }
+
+  void pause()
+  {
+    switch (_state) {
+    case state::running:
+      _state = state::pausing;
+      _log << logger::wrapped_uts_timestamp() << "Pause requested, sending signal...\n";
+      break;
+    default:
+      break;
+    }
+  }
+
+  void resume()
+  {
+    switch (_state) {
+    case state::pausing:
+    case state::paused:
+      _log << logger::wrapped_uts_timestamp() << "Resuming genetic algorithm...\n";
+      _state = state::running;
+      break;
+    default:
+      break;
+    }
+  }
+
+  void stop()
+  {
+    switch (_state) {
+    case state::running:
+    case state::pausing:
+    case state::paused:
+      _state = state::stopping;
+      break;
+    default:
+      break;
+    }
   }
 
   const shared_ptr<base_individual<F>>& get_best_individual() const
@@ -159,6 +237,7 @@ private:
   evolution_statistics<F> _statistics;
   setup<F> _setup;
   logger _log;
+  std::atomic<state> _state = state::waiting;
 };
 
 }

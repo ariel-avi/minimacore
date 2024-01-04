@@ -28,6 +28,21 @@ public:
     return _max_contiguous_failure_on_initialization;
   }
 
+  void set_max_contiguous_failure_on_initialization(size_t n)
+  {
+    _max_contiguous_failure_on_initialization = n;
+  }
+
+  [[nodiscard]] size_t get_thread_count() const
+  {
+    return _thread_count;
+  }
+
+  void set_thread_count(size_t n)
+  {
+    _thread_count = n;
+  }
+
   [[nodiscard]] size_t population_size() const
   {
     return _population_size;
@@ -175,6 +190,7 @@ private:
    * initialization boundaries when initializing individuals.
    */
   size_t _max_contiguous_failure_on_initialization = 300;
+  size_t _thread_count = 1;
 };
 
 }

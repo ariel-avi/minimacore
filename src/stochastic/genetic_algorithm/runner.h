@@ -9,6 +9,7 @@
 #include "termination_condition.h"
 #include "setup.h"
 #include <logger.h>
+#include <thread_pool.h>
 #include <functional>
 #include <minimacore_concepts.h>
 
@@ -148,9 +149,10 @@ public:
     return success;
   }
 
-  explicit runner(setup<F> setup)
-          :_statistics(setup.generations()),
-           _setup(std::move(setup)) { }
+  explicit runner(setup<F> s)
+          :_statistics(s.generations()),
+           _threads(s.get_thread_count()),
+           _setup(std::move(s)) { }
 
 private:
   [[nodiscard]] size_t objective_count() const
@@ -182,6 +184,33 @@ private:
          << '\n';
   }
 
+  bool initialize_individual(const individual_ptr<F>& individual)
+  {
+    size_t contiguous_failures = 0;
+    _setup.get_genome_generator()(individual);
+    while (std::isnan(evaluate(individual))
+            && contiguous_failures < _setup.max_contiguous_failure_on_initialization()) {
+      _setup.get_genome_generator()(individual);
+      contiguous_failures++;
+      switch (_state) {
+        [[unlikely]]
+      case state::stopping:
+        [[unlikely]]
+      case state::stopped:
+        return false;
+      default:
+        break;
+      }
+    }
+    if (contiguous_failures >= _setup.max_contiguous_failure_on_initialization()) {
+      _log << logger::wrapped_uts_timestamp()
+           << "Failed to initialize population. Maximum contiguous failure reached: "
+           << _setup.max_contiguous_failure_on_initialization() << '\n';
+      return false;
+    }
+    return true;
+  }
+
   bool initialize_population()
   {
     _log << logger::wrapped_uts_timestamp() << "Initializing population, size = " << _setup.population_size() << '\n';
@@ -192,20 +221,9 @@ private:
                       objective_count()
               )
       );
-      size_t contiguous_failures = 0;
-      _setup.get_genome_generator()(individual);
-      while (std::isnan(evaluate(individual))
-              && contiguous_failures < _setup.max_contiguous_failure_on_initialization()) {
-        _setup.get_genome_generator()(individual);
-        contiguous_failures++;
-      }
-      if (contiguous_failures >= _setup.max_contiguous_failure_on_initialization()) {
-        _log << logger::wrapped_uts_timestamp()
-             << "Failed to initialize population. Maximum contiguous failure reached: "
-             << _setup.max_contiguous_failure_on_initialization() << '\n';
-        return false;
-      }
+      if (!initialize_individual(individual)) return false;
     }
+
     update_best_individual();
     return true;
   }
@@ -248,6 +266,7 @@ private:
   evolution_statistics<F> _statistics;
   setup<F> _setup;
   logger _log;
+  thread_pool _threads;
   std::atomic<state> _state = state::waiting;
 };
 

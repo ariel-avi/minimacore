@@ -20,7 +20,7 @@ using chromosome_generator_ptr = unique_ptr<base_chromosome_generator<F>>;
 template<floating_point_type F>
 class genome_generator {
 public:
-  individual_ptr<F>& operator()(individual_ptr<F>& individual) const
+  const individual_ptr<F>& operator()(const individual_ptr<F>& individual) const
   {
     for (auto& generator : _chromosome_generators)
       generator->generate_chromosome(individual);

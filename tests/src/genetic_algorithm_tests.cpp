@@ -4,6 +4,7 @@
 #include "test_functions.h"
 #include <runner.h>
 #include <future>
+#include <atomic>
 
 using namespace minimacore::genetic_algorithm;
 
@@ -628,7 +629,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run)
           .add_evaluation(std::make_unique<sphere_evaluation_function<TypeParam>>());
   runner<TypeParam> r(std::move(s));
   r.add_log_stream(std::cout);
-  ASSERT_EQ(r.run(), runner<TypeParam>::successful_exit);
+  ASSERT_EQ(r.run(), runner<TypeParam>::success);
   ASSERT_LT(r.get_best_individual()->overall_fitness(), r.get_individual_zero()->overall_fitness());
   r.export_statistics("statistics.csv", ',');
 }
@@ -650,7 +651,6 @@ public:
 
   explicit basic_wait_function() = default;
 };
-
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run_pause_resume)
 {
@@ -674,7 +674,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run_pause_resume)
   r.pause();
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   r.resume();
-  ASSERT_EQ(fut.get(), runner<TypeParam>::successful_exit);
+  ASSERT_EQ(fut.get(), runner<TypeParam>::success);
 }
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run_pause_stop)
@@ -699,7 +699,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run_pause_stop)
   r.pause();
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   r.stop();
-  ASSERT_EQ(fut.get(), runner<TypeParam>::successful_exit);
+  ASSERT_EQ(fut.get(), runner<TypeParam>::success);
 }
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run_stop)
@@ -722,7 +722,74 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run_stop)
   auto fut = std::async(&runner<TypeParam>::run, &r);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   r.stop();
-  ASSERT_EQ(fut.get(), runner<TypeParam>::successful_exit);
+  ASSERT_EQ(fut.get(), runner<TypeParam>::success);
+}
+
+template<floating_point_type F>
+class population_initialization_fail_mock : public base_evaluation<F> {
+  const size_t _max_failures = 0;
+  mutable std::atomic<size_t> _fail_count{0};
+public:
+  size_t operator()(base_individual<F>& individual, size_t objective_index) const override
+  {
+    if (_fail_count.load() < _max_failures) {
+      individual.set_objective_fitness(objective_index, NAN);
+      _fail_count++;
+    } else {
+      individual.set_objective_fitness(objective_index, 1.);
+    }
+    return objective_index++;
+  }
+
+  [[nodiscard]] size_t objective_count() const override
+  {
+    return 1;
+  }
+
+  explicit population_initialization_fail_mock(size_t max_failures)
+          :_max_failures(max_failures) {}
+};
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, exit_on_population_initialization_failure_normal)
+{
+  vector f = this->_functions;
+  Eigen::VectorX<TypeParam> initial_genome = Eigen::VectorX<TypeParam>::Constant(3, 5.);
+  auto genome_gen = std::make_unique<genome_generator<TypeParam>>(initial_genome);
+  genome_gen->append_chromosome_generator(std::make_unique<chromosome_generator_impl<TypeParam>>(-5., 5.));
+  setup<TypeParam> s;
+  s.set_population_size(10)
+          .set_generations(20)
+          .set_selection_for_reproduction(std::make_unique<truncation_selection_for_reproduction<TypeParam>>(4))
+          .set_selection_for_replacement(std::make_unique<truncation_selection_for_replacement<TypeParam>>(6))
+          .set_crossover(std::make_unique<uniform_linear_crossover<TypeParam>>(1.))
+          .set_mutation(std::make_unique<uniform_mutation<TypeParam>>(.05, 1.))
+          .set_genome_generator(std::move(genome_gen))
+          .add_evaluation(std::make_unique<population_initialization_fail_mock<TypeParam>>(290U));
+  runner<TypeParam> r(std::move(s));
+  r.add_log_stream(std::cout);
+  auto fut = std::async(&runner<TypeParam>::run, &r);
+  ASSERT_EQ(fut.get(), runner<TypeParam>::success);
+}
+
+TYPED_TEST(minimacore_genetic_algorithm_tests, exit_on_population_initialization_failure_fail)
+{
+  vector f = this->_functions;
+  Eigen::VectorX<TypeParam> initial_genome = Eigen::VectorX<TypeParam>::Constant(3, 5.);
+  auto genome_gen = std::make_unique<genome_generator<TypeParam>>(initial_genome);
+  genome_gen->append_chromosome_generator(std::make_unique<chromosome_generator_impl<TypeParam>>(-5., 5.));
+  setup<TypeParam> s;
+  s.set_population_size(10)
+          .set_generations(20)
+          .set_selection_for_reproduction(std::make_unique<truncation_selection_for_reproduction<TypeParam>>(4))
+          .set_selection_for_replacement(std::make_unique<truncation_selection_for_replacement<TypeParam>>(6))
+          .set_crossover(std::make_unique<uniform_linear_crossover<TypeParam>>(1.))
+          .set_mutation(std::make_unique<uniform_mutation<TypeParam>>(.05, 1.))
+          .set_genome_generator(std::move(genome_gen))
+          .add_evaluation(std::make_unique<population_initialization_fail_mock<TypeParam>>(301U));
+  runner<TypeParam> r(std::move(s));
+  r.add_log_stream(std::cout);
+  auto fut = std::async(&runner<TypeParam>::run, &r);
+  ASSERT_EQ(fut.get(), runner<TypeParam>::failure);
 }
 
 

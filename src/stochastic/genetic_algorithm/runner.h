@@ -21,9 +21,9 @@ class runner {
   using evaluation_t = unique_ptr<base_evaluation<F>>;
 
 public:
-  enum exit_code {
-    successful_exit = 0,
-    failed_exit
+  enum exit_flag {
+    success = 0,
+    failure
   };
 
   enum class state {
@@ -35,58 +35,6 @@ public:
     stopped,
     done
   };
-
-  exit_code run()
-  {
-    if (_state != state::waiting) return exit_code::failed_exit;
-    _state = state::running;
-    _log << logger::wrapped_uts_timestamp() << "Starting genetic algorithm...\n";
-    initialize_individual_zero();
-    initialize_population();
-    _statistics.register_statistic(_population);
-    _setup.add_termination(std::make_unique<generation_termination<F>>(_setup.generations()));
-    while (
-            std::none_of(
-                    std::execution::par_unseq,
-                    _setup.termination_conditions().begin(),
-                    _setup.termination_conditions().end(),
-                    [this](auto& condition) { return (*condition)(_statistics); }
-            )
-            ) {
-      switch (_state) {
-      case state::running: {
-        auto reproduction_set = _setup.selection_for_reproduction()(_population);
-        _setup.selection_for_replacement()(_population);
-        fill_population(reproduction_set);
-        _statistics.register_statistic(_population);
-        update_best_individual();
-        _log << logger::wrapped_uts_timestamp() << "Generation " << _statistics.current_generation() << " complete\n";
-        break;
-      }
-      case state::pausing: {
-        _state = state::paused;
-        break;
-      }
-      case state::paused: {
-        continue;
-      }
-      case state::stopping: {
-        _state = state::stopped;
-        break;
-      }
-      case state::stopped: {
-        _log << logger::wrapped_uts_timestamp() << "Genetic successfully stopped, exit code: " << successful_exit
-             << '\n';
-        return successful_exit;
-      }
-      default:
-        break;
-      }
-    }
-    _state = state::done;
-    _log << logger::wrapped_uts_timestamp() << "Genetic algorithm complete, exit code: " << successful_exit << '\n';
-    return successful_exit;
-  }
 
   void pause()
   {
@@ -148,6 +96,58 @@ public:
     _statistics.write(ofs, sep);
   }
 
+  exit_flag run()
+  {
+    if (_state != state::waiting) return exit_flag::failure;
+    _state = state::running;
+    _log << logger::wrapped_uts_timestamp() << "Starting genetic algorithm...\n";
+    initialize_individual_zero();
+    if (!initialize_population()) return exit_flag::failure;
+    _statistics.register_statistic(_population);
+    _setup.add_termination(std::make_unique<generation_termination<F>>(_setup.generations()));
+    while (
+            std::none_of(
+                    std::execution::par_unseq,
+                    _setup.termination_conditions().begin(),
+                    _setup.termination_conditions().end(),
+                    [this](auto& condition) { return (*condition)(_statistics); }
+            )
+            ) {
+      switch (_state) {
+      case state::running: {
+        auto reproduction_set = _setup.selection_for_reproduction()(_population);
+        _setup.selection_for_replacement()(_population);
+        fill_population(reproduction_set);
+        _statistics.register_statistic(_population);
+        update_best_individual();
+        _log << logger::wrapped_uts_timestamp() << "Generation " << _statistics.current_generation() << " complete\n";
+        break;
+      }
+      case state::pausing: {
+        _state = state::paused;
+        break;
+      }
+      case state::paused: {
+        continue;
+      }
+      case state::stopping: {
+        _state = state::stopped;
+        break;
+      }
+      case state::stopped: {
+        _log << logger::wrapped_uts_timestamp() << "Genetic successfully stopped, exit code: " << success
+             << '\n';
+        return success;
+      }
+      default:
+        break;
+      }
+    }
+    _state = state::done;
+    _log << logger::wrapped_uts_timestamp() << "Genetic algorithm complete, exit code: " << success << '\n';
+    return success;
+  }
+
   explicit runner(setup<F> setup)
           :_statistics(setup.generations()),
            _setup(std::move(setup)) { }
@@ -163,12 +163,11 @@ private:
     );
   }
 
-  void evaluate(const individual_ptr<F>& individual)
+  F evaluate(const individual_ptr<F>& individual)
   {
-    while (!individual->is_valid()) {
-      size_t dummy = 0;
-      for (auto& evaluation : _setup.evaluations()) dummy = (*evaluation)(*individual, dummy);
-    }
+    size_t counter = 0; // used to count objectives and align fitness values
+    for (auto& evaluation : _setup.evaluations()) counter = (*evaluation)(*individual, counter);
+    return individual->overall_fitness();
   }
 
   void initialize_individual_zero()
@@ -183,7 +182,7 @@ private:
          << '\n';
   }
 
-  void initialize_population()
+  bool initialize_population()
   {
     _log << logger::wrapped_uts_timestamp() << "Initializing population, size = " << _setup.population_size() << '\n';
     while (_population.size() < _setup.population_size()) {
@@ -193,10 +192,22 @@ private:
                       objective_count()
               )
       );
+      size_t contiguous_failures = 0;
       _setup.get_genome_generator()(individual);
-      evaluate(individual);
+      while (std::isnan(evaluate(individual))
+              && contiguous_failures < _setup.max_contiguous_failure_on_initialization()) {
+        _setup.get_genome_generator()(individual);
+        contiguous_failures++;
+      }
+      if (contiguous_failures >= _setup.max_contiguous_failure_on_initialization()) {
+        _log << logger::wrapped_uts_timestamp()
+             << "Failed to initialize population. Maximum contiguous failure reached: "
+             << _setup.max_contiguous_failure_on_initialization() << '\n';
+        return false;
+      }
     }
     update_best_individual();
+    return true;
   }
 
   void fill_population(population_t<F>& reproduction_set)

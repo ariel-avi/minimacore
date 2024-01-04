@@ -215,17 +215,23 @@ private:
   {
     _log << logger::wrapped_uts_timestamp() << "Initializing population, size = " << _setup.population_size() << '\n';
     while (_population.size() < _setup.population_size()) {
-      auto& individual = _population.emplace_back(
+      _population.emplace_back(
               std::make_shared<base_individual<F>>(
                       _setup.get_genome_generator().initial_genome(),
                       objective_count()
               )
       );
-      if (!initialize_individual(individual)) return false;
     }
 
-    update_best_individual();
-    return true;
+    vector<std::future<bool>> futures;
+    futures.reserve(_population.size());
+    for (auto& individual : _population)
+      futures.emplace_back(_threads.enqueue([this, &individual]() { return initialize_individual(individual); }));
+
+    bool success_flag = true;
+    std::ranges::for_each(futures, [this, &success_flag](auto& f) { success_flag &= f.get(); });
+    if (success_flag) update_best_individual();
+    return success_flag;
   }
 
   void fill_population(population_t<F>& reproduction_set)
@@ -234,20 +240,34 @@ private:
     std::mt19937_64 generator{device()};
     std::uniform_real_distribution<F> distribution(0., 1.);
     while (_population.size() < _setup.population_size()) {
-      F chance = distribution(generator);
-      individual_ptr<F> individual;
-      if (_setup.get_mutation().should_mutate()) {
-        individual = std::make_shared<base_individual<F>>(
-                _setup.get_mutation()(*random_pick(reproduction_set)),
-                objective_count());
+      size_t count = _setup.population_size() - _population.size();
+      vector<std::future<individual_ptr<F>>> futures;
+      futures.reserve(count);
+      for (size_t i = 0; i < count; i++) {
+        F chance = distribution(generator);
+        individual_ptr<F> individual;
+        if (_setup.get_mutation().should_mutate()) {
+          individual = std::make_shared<base_individual<F>>(
+                  _setup.get_mutation()(*random_pick(reproduction_set)),
+                  objective_count());
+        }
+        else {
+          individual = std::make_shared<base_individual<F>>(
+                  _setup.crossover()(*random_pick(reproduction_set), *random_pick(reproduction_set)),
+                  objective_count());
+        }
+
+        futures.emplace_back(
+                _threads.enqueue(
+                        [this, individual]() {
+                          // Individuals are discarded if the evaluation fails
+                          return std::isnan(evaluate(individual)) ? individual_ptr<F>(nullptr) : individual;
+                        }
+                ));
       }
-      else {
-        individual = std::make_shared<base_individual<F>>(
-                _setup.crossover()(*random_pick(reproduction_set), *random_pick(reproduction_set)),
-                objective_count());
-      }
-      evaluate(individual);
-      _population.push_back(individual);
+
+      for (auto& fut : futures) if (auto individual = fut.get()) _population.emplace_back(individual);
+
     }
   }
 

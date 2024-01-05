@@ -188,9 +188,9 @@ public:
     _genome_generator = std::move(other._genome_generator);
     _termination_conditions = std::move(other._termination_conditions);
     _evaluations = std::move(other._evaluations);
-    _thread_count(other._thread_count);
-    _max_contiguous_failure_on_initialization(other._max_contiguous_failure_on_initialization);
-    _iteration_callbacks(std::move(other._iteration_callbacks));
+    _thread_count = other._thread_count;
+    _max_contiguous_failure_on_initialization = other._max_contiguous_failure_on_initialization;
+    _iteration_callbacks = std::move(other._iteration_callbacks);
   }
 
   setup& operator=(const setup& other) = delete;

@@ -104,6 +104,7 @@ public:
     _log << logger::wrapped_uts_timestamp() << "Starting genetic algorithm...\n";
     initialize_individual_zero();
     if (!initialize_population()) return exit_flag::failure;
+    _setup.run_iteration_callbacks();
     _statistics.register_statistic(_population);
     _setup.add_termination(std::make_unique<generation_termination<F>>(_setup.generations()));
     while (
@@ -121,12 +122,13 @@ public:
         fill_population(reproduction_set);
         _statistics.register_statistic(_population);
         update_best_individual();
+        _setup.run_iteration_callbacks();
         _log << logger::wrapped_uts_timestamp() << "Generation " << _statistics.current_generation() << " complete\n";
         break;
       }
       case state::pausing: {
         _state = state::paused;
-        break;
+        continue;
       }
       case state::paused: {
         continue;
@@ -147,6 +149,11 @@ public:
     _state = state::done;
     _log << logger::wrapped_uts_timestamp() << "Genetic algorithm complete, exit code: " << success << '\n';
     return success;
+  }
+
+  setup<F>& get_setup()
+  {
+    return _setup;
   }
 
   explicit runner(setup<F> s)

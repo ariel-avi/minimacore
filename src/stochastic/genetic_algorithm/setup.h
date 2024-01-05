@@ -7,8 +7,11 @@
 #include "base_evaluation.h"
 #include "base_individual_generator.h"
 #include "termination_condition.h"
+#include <functional>
 
 namespace minimacore::genetic_algorithm {
+
+using std::function;
 
 template<floating_point_type F>
 class setup {
@@ -142,6 +145,22 @@ public:
     return *this;
   }
 
+  setup<F>& add_callback(function<void()>&& f)
+  {
+    _iteration_callbacks.emplace_back(std::move(f));
+    return *this;
+  }
+
+  void run_iteration_callbacks() const
+  {
+    std::for_each(
+            std::execution::par_unseq,
+            _iteration_callbacks.begin(),
+            _iteration_callbacks.end(),
+            [](auto& f) { f(); }
+    );
+  }
+
   setup(setup&& other) noexcept
           :_population_size(other._population_size),
            _generations(other._generations),
@@ -151,7 +170,10 @@ public:
            _mutation(std::move(other._mutation)),
            _genome_generator(std::move(other._genome_generator)),
            _termination_conditions(std::move(other._termination_conditions)),
-           _evaluations(std::move(other._evaluations)) { }
+           _evaluations(std::move(other._evaluations)),
+           _thread_count(other._thread_count),
+           _max_contiguous_failure_on_initialization(other._max_contiguous_failure_on_initialization),
+           _iteration_callbacks(std::move(other._iteration_callbacks)) { }
 
   setup(const setup& other) = delete;
 
@@ -166,6 +188,9 @@ public:
     _genome_generator = std::move(other._genome_generator);
     _termination_conditions = std::move(other._termination_conditions);
     _evaluations = std::move(other._evaluations);
+    _thread_count(other._thread_count);
+    _max_contiguous_failure_on_initialization(other._max_contiguous_failure_on_initialization);
+    _iteration_callbacks(std::move(other._iteration_callbacks));
   }
 
   setup& operator=(const setup& other) = delete;
@@ -190,7 +215,8 @@ private:
    * initialization boundaries when initializing individuals.
    */
   size_t _max_contiguous_failure_on_initialization = 300;
-  size_t _thread_count = 1;
+  size_t _thread_count = std::thread::hardware_concurrency();
+  vector<function<void()>> _iteration_callbacks;
 };
 
 }

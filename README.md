@@ -10,8 +10,8 @@ MinimaCore is an open-source modern C++ numerical optimization library (C++20 or
 
 # Background
 
-After looking around for some open source libraries with low licensing restrictions, we couldn't find any that met our requirements. The
-requirements are simple in terms of supported optimization problems and programming techniques.
+After looking around for some open source libraries with low licensing restrictions, we couldn't find any that met our
+requirements. The requirements are simple in terms of supported optimization problems and programming techniques.
 
 - No convoluted software API
 - Focus on continuous-domain problems
@@ -20,10 +20,11 @@ requirements are simple in terms of supported optimization problems and programm
 - Leverage parallelism
 - Open source and contribution-friendly
 
-The library should also support different algorithm types that follow the same programming paradigms and conventions. For example, if you
-need to solve a continuous-domain optimization problem, you should be able easily navigate through different algorithm types to try 
-different approaches for such problem. Changing from Genetic Algorithm to Differential Evolution or Particle Swarm Optimization should be
-easy and intuitive enough that not much documentation is necessary to migrate to a different solution.
+The library should also support different algorithm types that follow the same programming paradigms and conventions.
+For example, if you need to solve a continuous-domain optimization problem, you should be able easily navigate through
+different algorithm types to try different approaches for such problem. Changing from Genetic Algorithm to Differential
+Evolution or Particle Swarm Optimization should be easy and intuitive enough that not much documentation is necessary to
+migrate to a different solution.
 
 # Authors
 
@@ -55,6 +56,45 @@ floating-point types) will be introduced in the future
 Currently available targets:
 
 `minimacore::genetic_algorithm` (incomplete)
+
+## Build
+
+minimacore uses [Conan](https://conan.io/) as the dependency manager. To make the dependencies available for CMake,
+follow the steps given below
+
+### Windows
+
+To use dependencies in Debug and Release mode on MSVC, you have to build the dependencies packages for Debug and Release
+separately:
+
+```commandline
+conan install . --build=missing -s build_type=Release
+```
+
+```commandline
+conan install . --build=missing -s build_type=Debug
+```
+
+When calling CMake to compile with MSVC, make sure to use Visual Studio's generator and add the path
+to `conan_toolchain.cmake` file.
+
+```commandline
+cmake .. -DCAMKE_TOOL_CHAIN_FILE=<path/to/root>/build/generators/conan_toolchain.cmake -G "Visual Studio 17 2022"
+```
+
+### Linux
+
+Compilation on Linux is more straight forward.
+
+```shell
+conan install . --build=missing
+```
+
+Then assign the generated conan toolchain file to your CMake command:
+
+```shell
+cmake .. -DCAMKE_TOOL_CHAIN_FILE=<path/to/root>/build/generators/conan_toolchain.cmake
+```
 
 ## Dependencies
 

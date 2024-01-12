@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <execution>
 #include <random>
+#include <set>
 
 namespace minimacore::genetic_algorithm {
 

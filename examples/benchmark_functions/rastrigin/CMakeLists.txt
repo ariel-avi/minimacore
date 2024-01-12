@@ -1,0 +1,2 @@
+add_executable(minimacore_example_rastrigin rastrigin.cpp)
+target_link_libraries(minimacore_example_rastrigin PRIVATE minimacore::genetic_algorithm)

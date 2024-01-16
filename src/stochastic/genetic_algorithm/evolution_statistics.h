@@ -151,7 +151,7 @@ public:
                   std::initializer_list<int>{
                           (int) statistics_requests_factory<F>::stat_requests::best_fitness_stat,
                           (int) statistics_requests_factory<F>::stat_requests::average_fitness_stat,
-                          (int) statistics_requests_factory<F>::stat_requests::best_fitness_stat
+                          (int) statistics_requests_factory<F>::stat_requests::selection_pressure_stat
                   }
           }
                                )

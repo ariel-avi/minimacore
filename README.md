@@ -96,6 +96,13 @@ Then assign the generated conan toolchain file to your CMake command:
 cmake .. -DCAMKE_TOOL_CHAIN_FILE=<path/to/root>/build/generators/conan_toolchain.cmake
 ```
 
+## Examples
+
+The examples can be accessed in the [examples](examples) directory. Here is a list of available examples:
+
+- Genetic Algorithm
+    - [Rastrigin Function](examples/benchmark_functions/rastrigin/rastrigin.md)
+
 ## Dependencies
 
 ### C++20 capable compiler

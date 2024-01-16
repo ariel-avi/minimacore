@@ -599,7 +599,6 @@ public:
   size_t operator()(base_individual<F>& individual, size_t objective_index) const override
   {
     individual.set_objective_fitness(objective_index, std::abs(sphere(individual.genome())));
-    objective_index++;
     return ++objective_index;
   }
 

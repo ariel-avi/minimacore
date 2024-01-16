@@ -156,12 +156,18 @@ public:
     return _setup;
   }
 
+  const population_t<F>& get_population() const
+  {
+    return _population;
+  }
+
   explicit runner(setup<F> s)
           :_statistics(s.generations()),
            _threads(s.get_thread_count()),
            _setup(std::move(s)) { }
 
 private:
+
   [[nodiscard]] size_t objective_count() const
   {
     return std::accumulate(

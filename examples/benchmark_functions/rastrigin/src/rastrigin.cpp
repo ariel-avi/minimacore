@@ -77,12 +77,12 @@ int main(int argc, char** argv)
   auto genome_gen = std::make_unique<genome_generator<double>>(initial_genome);
   genome_gen->append_chromosome_generator(std::make_unique<chromosome_generator_impl<double>>(-5.12, 5.12));
   setup<double> s;
-  s.set_population_size(200)
-          .set_generations(200)
-          .set_selection_for_replacement(std::make_unique<truncation_selection_for_replacement<double>>(150))
-          .set_selection_for_reproduction(std::make_unique<tournament_selection_for_reproduction<double>>(5, 20))
-          .set_crossover(std::make_unique<uniform_linear_crossover<double>>(1.5))
-          .set_mutation(std::make_unique<gaussian_mutation<double>>(0.05, .2))
+  s.set_population_size(100)
+          .set_generations(50)
+          .set_selection_for_replacement(std::make_unique<truncation_selection_for_replacement<double>>(50))
+          .set_selection_for_reproduction(std::make_unique<tournament_selection_for_reproduction<double>>(5, 10))
+          .set_crossover(std::make_unique<uniform_voluminal_crossover<double>>(2))
+          .set_mutation(std::make_unique<gaussian_mutation<double>>(0.05, .5))
           .set_genome_generator(std::move(genome_gen))
           .add_evaluation(std::make_unique<rastrigin_evaluation_function<double>>());
   runner<double> r(std::move(s));

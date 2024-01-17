@@ -23,7 +23,7 @@ statistics (`rastrigin_statistics.csv`).
 To process that data and create an animation, just run:
 
 ```shell
-python -m <path/to>/evolution_plot.py
+python -m <path/to>/rastrigin_plot_analysis.py
 ```
 
 Then you will have an animation that looks like the following:

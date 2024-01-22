@@ -16,6 +16,9 @@
 namespace minimacore::genetic_algorithm {
 
 using std::function;
+typedef std::chrono::high_resolution_clock clock_t;
+typedef std::chrono::time_point<clock_t> time_point_t;
+typedef std::chrono::duration<double, std::milli> duration_t;
 
 template<floating_point_type F>
 class runner {
@@ -100,10 +103,14 @@ public:
   exit_flag run()
   {
     if (_state != state::waiting) return exit_flag::failure;
+    _start_time = std::chrono::high_resolution_clock::now();
     _state = state::running;
     _log << logger::wrapped_uts_timestamp() << "Starting genetic algorithm...\n";
     initialize_individual_zero();
-    if (!initialize_population()) return exit_flag::failure;
+    if (!initialize_population()) {
+      display_final_message(failure);
+      return exit_flag::failure;
+    }
     _setup.run_iteration_callbacks();
     _statistics.register_statistic(_population);
     _setup.add_termination(std::make_unique<generation_termination<F>>(_setup.generations()));
@@ -138,8 +145,7 @@ public:
         break;
       }
       case state::stopped: {
-        _log << logger::wrapped_uts_timestamp() << "Genetic successfully stopped, exit code: " << success
-             << '\n';
+        display_final_message(success);
         return success;
       }
       default:
@@ -147,7 +153,7 @@ public:
       }
     }
     _state = state::done;
-    _log << logger::wrapped_uts_timestamp() << "Genetic algorithm complete, exit code: " << success << '\n';
+    display_final_message(success);
     return success;
   }
 
@@ -161,12 +167,24 @@ public:
     return _population;
   }
 
+  [[nodiscard]] duration_t elapsed_time_ms() const {
+    auto duration = clock_t::now() - _start_time;
+    return std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+  }
+
   explicit runner(setup<F> s)
           :_statistics(s.generations()),
            _threads(s.get_thread_count()),
            _setup(std::move(s)) { }
 
 private:
+
+  void display_final_message(exit_flag flag)
+  {
+    _log << logger::wrapped_uts_timestamp() << "Optimization finished.\n"
+         << logger::wrapped_uts_timestamp() << "Total evaluations: " << _statistics.evaluation_count() << '\n'
+         << logger::wrapped_uts_timestamp() << "Total elapsed time: " << elapsed_time_ms().count() << "ms\n";
+  }
 
   [[nodiscard]] size_t objective_count() const
   {
@@ -182,6 +200,7 @@ private:
   {
     size_t counter = 0; // used to count objectives and align fitness values
     for (auto& evaluation : _setup.evaluations()) counter = (*evaluation)(*individual, counter);
+    _statistics.increment_evaluation_count(counter);
     return individual->overall_fitness();
   }
 
@@ -301,6 +320,7 @@ private:
   logger _log;
   thread_pool _threads;
   std::atomic<state> _state = state::waiting;
+  time_point_t _start_time;
 };
 
 }

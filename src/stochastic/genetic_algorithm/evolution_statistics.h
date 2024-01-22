@@ -145,6 +145,14 @@ public:
     }
   }
 
+  void increment_evaluation_count(size_t count) {
+    _evaluation_count += count;
+  }
+
+  size_t evaluation_count() const {
+    return _evaluation_count.load();
+  }
+
   explicit evolution_statistics(
           Eigen::Index maximum_generations,
           vector<int> requests = vector < int > {
@@ -160,6 +168,7 @@ public:
 
 protected:
   size_t _generation{0};
+  std::atomic_size_t _evaluation_count{0UL};
   Eigen::MatrixX<F> _statistics;
   vector<int> _requests;
 

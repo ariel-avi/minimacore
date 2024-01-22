@@ -7,5 +7,5 @@ add_custom_command(TARGET minimacore_example_rastrigin
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_CURRENT_SOURCE_DIR}/rastrigin_plot_analysis.py
-        ${CMAKE_BINARY_DIR}
+        ${CMAKE_BINARY_DIR}/bin
         COMMENT "Copying Rastrigin Python script to binary directory")

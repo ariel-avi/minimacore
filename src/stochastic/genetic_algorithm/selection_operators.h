@@ -110,28 +110,20 @@ namespace minimacore::genetic_algorithm {
 
     template <floating_point_type Fp_T>
     static bool is_dominant(const individual_ptr<Fp_T> &individual, const reproduction_selection_t<Fp_T> &subgroup) {
+      return std::all_of(
 #ifdef HAS_EXECUTION_POLICIES
-      return std::all_of(std::execution::par_unseq, subgroup.begin(), subgroup.end(), [&](const auto &comparison) {
-        if (individual != comparison) {
-          bool is_dominant{false};
-          for (size_t i = 0; i < individual->get_object_fitnesses().size(); i++)
-            is_dominant = is_dominant || individual->objective_fitness(i) < comparison->objective_fitness(i);
-          return is_dominant;
-        }
-        return true;
-      });
-#else
-      return std::all_of(subgroup.begin(), subgroup.end(), [&](const auto &comparison) {
-        if (individual != comparison) {
-          bool is_dominant{false};
-          for (size_t i = 0; i < individual->get_object_fitnesses().size(); i++) {
-            is_dominant = is_dominant || individual->objective_fitness(i) < comparison->objective_fitness(i);
-          }
-          return is_dominant;
-        }
-        return true;
-      });
+          std::execution::par_unseq,
 #endif
+          subgroup.begin(), subgroup.end(), [&](const auto &comparison) {
+            if (individual != comparison) {
+              bool is_dominant{false};
+              for (size_t i = 0; i < individual->get_object_fitnesses().size(); i++) {
+                is_dominant = is_dominant || individual->objective_fitness(i) < comparison->objective_fitness(i);
+              }
+              return is_dominant;
+            }
+            return true;
+          });
     }
 
     template <floating_point_type Fp_T>
@@ -186,24 +178,21 @@ namespace minimacore::genetic_algorithm {
       int count{0};
       while (selected_amount < _selection_size) {
         reproduction_selection_t<Fp_T> subgroup;
+        std::for_each(
 #ifdef HAS_EXECUTION_POLICIES
-        std::for_each(std::execution::par_unseq, population.begin(), population.end(),
-                      [&result, &subgroup](auto &individual) {
-                        if (std::find_if(std::execution::par_unseq, result.begin(), result.end(),
-                                         [&individual](auto &subgroup_individual) {
-                                           return individual == subgroup_individual;
-                                         }) == result.end())
-                          subgroup.push_back(individual);
-                      });
-#else
-        std::for_each(population.begin(), population.end(), [&result, &subgroup](auto &individual) {
-          if (std::find_if(result.begin(), result.end(), [&individual](auto &subgroup_individual) {
-                return individual == subgroup_individual;
-              }) == result.end()) {
-            subgroup.push_back(individual);
-          }
-        });
+            std::execution::par_unseq,
 #endif
+            population.begin(), population.end(), [&result, &subgroup](auto &individual) {
+              if (std::find_if(
+#ifdef HAS_EXECUTION_POLICIES
+                      std::execution::par_unseq,
+#endif
+                      result.begin(), result.end(), [&individual](auto &subgroup_individual) {
+                        return individual == subgroup_individual;
+                      }) == result.end()) {
+                subgroup.push_back(individual);
+              }
+            });
         for (auto &subgroup_individual : subgroup) {
           if (is_dominant(subgroup_individual, subgroup)) {
             result.push_back(subgroup_individual);

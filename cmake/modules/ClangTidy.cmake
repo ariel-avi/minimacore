@@ -100,6 +100,15 @@ function(add_clang_tidy_for TARGET_NAME)
         endforeach()
     endif()
 
+    # Pass implicit compiler include paths (e.g. GCC stdlib on Linux) so clang-tidy
+    # can resolve standard library headers when the build compiler differs from clang.
+    # Not needed on Apple: stdlib headers are already handled via -isysroot + explicit libc++ path.
+    if (NOT APPLE)
+        foreach(_inc_dir IN LISTS CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES)
+            list(APPEND _extra_include_args "-extra-arg=-isystem${_inc_dir}")
+        endforeach()
+    endif()
+
     if (APPLE)
         execute_process(
                 COMMAND xcrun --show-sdk-path

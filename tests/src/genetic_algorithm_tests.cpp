@@ -311,7 +311,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_linear_crossover) {
 TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_voluminal_crossover) {
   for (size_t i{0}; i < this->_population.size() / 2; i++) {
     const auto &individual_a = this->_population[i];
-    const auto &individual_b = this->_population[i + this->_population.size() / 2];
+    const auto &individual_b = this->_population[i + (this->_population.size() / 2)];
     uniform_voluminal_crossover<TypeParam> crossover(1., 2);
     auto genome = crossover(*individual_a, *individual_b);
     auto midpoint = (individual_b->genome() + individual_a->genome()) / 2;

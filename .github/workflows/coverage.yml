@@ -8,7 +8,7 @@ on:
 
 jobs:
   coverage:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y lcov gcc g++ python3-pip
+          sudo apt-get install -y lcov gcc-13 g++-13
 
       - name: Setup CMake 3.30.x
         uses: jwlawson/actions-setup-cmake@v2
@@ -46,13 +46,13 @@ jobs:
           conan install . \
             -s build_type=Debug \
             -s compiler=gcc \
+            -s compiler.version=13 \
             -s compiler.cppstd=20 \
             --build=missing \
             -g CMakeDeps -g CMakeToolchain
 
       - name: Configure
-        run: |
-          cmake --preset conan-debug -DCMAKE_BUILD_TYPE=Coverage 
+        run: cmake --preset conan-debug -DCMAKE_BUILD_TYPE=Coverage
 
       - name: Build tests
         run: cmake --build --preset conan-debug --target minimacore_tests -j$(nproc)
@@ -63,18 +63,13 @@ jobs:
       - name: Capture coverage
         run: |
           lcov --capture --no-external \
+            --gcov-tool gcov-13 \
             --directory build/Debug \
+            --base-directory . \
             --output-file coverage.info
 
       - name: Archive coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage_reports
           path: coverage.info
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage.info
-          fail_ci_if_error: true

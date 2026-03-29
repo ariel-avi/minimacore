@@ -229,8 +229,9 @@ namespace minimacore::genetic_algorithm {
 
       vector<std::future<bool>> futures;
       futures.reserve(_population.size());
-      for (auto &individual : _population)
+      for (auto &individual : _population) {
         futures.emplace_back(_threads.enqueue([this, &individual]() { return initialize_individual(individual); }));
+      }
 
       bool success_flag = true;
       std::ranges::for_each(futures, [this, &success_flag](auto &f) { success_flag &= f.get(); });
@@ -265,9 +266,11 @@ namespace minimacore::genetic_algorithm {
           }));
         }
 
-        for (auto &fut : futures)
-          if (auto individual = fut.get())
+        for (auto &fut : futures) {
+          if (auto individual = fut.get()) {
             _population.emplace_back(individual);
+          }
+        }
       }
     }
 

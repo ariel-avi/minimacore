@@ -140,9 +140,11 @@ namespace minimacore::genetic_algorithm {
       population_t<Fp_T> cpy(population);
       while (!cpy.empty()) {
         auto &current_rank = ranks.emplace_back();
-        for (auto &individual : cpy)
-          if (is_dominant(individual, cpy))
+        for (auto &individual : cpy) {
+          if (is_dominant(individual, cpy)) {
             current_rank.push_back(individual);
+          }
+        }
         std::erase_if(cpy, [&current_rank](const auto &individual) {
           return std::find(current_rank.begin(), current_rank.end(), individual) != current_rank.end();
         });
@@ -205,8 +207,9 @@ namespace minimacore::genetic_algorithm {
         for (auto &subgroup_individual : subgroup) {
           if (is_dominant(subgroup_individual, subgroup)) {
             result.push_back(subgroup_individual);
-            if (_select_by == select_by::INDIVIDUALS && ++selected_amount < _selection_size)
+            if (_select_by == select_by::INDIVIDUALS && ++selected_amount < _selection_size) {
               return result;
+            }
           }
         }
         selected_amount += _select_by == select_by::RANKS;

@@ -60,13 +60,14 @@ protected:
     for (auto &rank_i : _unique_sorted_ranks) {
       if (rank_i < rank_count) {
         for (size_t i{0}; i < _ranks.size(); i++) {
-          if (_ranks[i] == rank_i)
+          if (_ranks[i] == rank_i) {
             test_set.push_back(_population[i]);
+          }
         }
       }
     }
 
-    ranked_selection_for_reproduction<F> selection_for_reproduction(rank_count, ranked_selection::select_by_ranks);
+    ranked_selection_for_reproduction<F> selection_for_reproduction(rank_count, ranked_selection::select_by::RANKS);
     reproduction_selection_t<F> selected = selection_for_reproduction(_population);
     ASSERT_EQ(selected.size(), test_set.size()) << "Rank count: " << rank_count;
 
@@ -79,16 +80,17 @@ protected:
   void test_ranked_selection_for_replacement_by_ranks(size_t rank_count) {
     reproduction_selection_t<F> test_set;
     size_t count{0};
-    for (auto &rank_i : std::ranges::reverse_view(_unique_sorted_ranks)) {
+    for (const auto &rank_i : std::ranges::reverse_view(_unique_sorted_ranks)) {
       if (count < rank_count) {
         for (size_t i{_ranks.size()}; i != 0; i--) {
-          if (_ranks[i - 1] == rank_i)
+          if (_ranks[i - 1] == rank_i) {
             test_set.push_back(_population[i - 1]);
+          }
         }
         count++;
       }
     }
-    ranked_selection_for_replacement<F> selection(rank_count, ranked_selection::select_by_ranks);
+    ranked_selection_for_replacement<F> selection(rank_count, ranked_selection::select_by::RANKS);
     selection(_population);
     ASSERT_EQ(_population.size() + test_set.size(), _ranks.size())
         << "Rank count: " << rank_count << "\nTest Size: " << test_set.size()
@@ -112,7 +114,7 @@ protected:
     }
 
     ranked_selection_for_reproduction<F> selection_for_reproduction(individual_count,
-                                                                    ranked_selection::select_by_individuals);
+                                                                    ranked_selection::select_by::INDIVIDUALS);
     reproduction_selection_t<F> top_rank = selection_for_reproduction(_population);
     ASSERT_NE(top_rank.size(), test_set.size());
 
@@ -123,7 +125,7 @@ protected:
   }
 
   void test_ranked_selection_for_replacement_by_individuals(size_t individual_count) {
-    ranked_selection_for_replacement<F> selection(individual_count, ranked_selection::select_by_individuals);
+    ranked_selection_for_replacement<F> selection(individual_count, ranked_selection::select_by::INDIVIDUALS);
     selection(_population);
     ASSERT_EQ(_population.size(), 10 - individual_count);
   }

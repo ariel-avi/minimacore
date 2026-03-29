@@ -61,8 +61,7 @@ jobs:
         run: |
           lcov --capture --initial --no-external \
             --directory build/Debug \
-            --output-file coverage_baseline.info \
-            --exclude '*/tests/src/*'
+            --output-file coverage_baseline.info
 
       - name: Run tests
         run: ctest --test-dir build/Debug --output-on-failure
@@ -71,8 +70,7 @@ jobs:
         run: |
           lcov --capture --no-external \
             --directory build/Debug \
-            --output-file coverage_total.info \
-            --exclude '*/tests/src/*'
+            --output-file coverage_total.info
 
       - name: Merge coverage data
         run: lcov -a coverage_baseline.info -a coverage_total.info -o coverage.info

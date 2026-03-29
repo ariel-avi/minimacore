@@ -516,7 +516,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run) {
       .add_evaluation(std::make_unique<sphere_evaluation_function<TypeParam>>());
   runner<TypeParam> r(std::move(s));
   r.add_log_stream(std::cout);
-  ASSERT_EQ(r.run(), runner<TypeParam>::SUCCESS);
+  ASSERT_EQ(r.run(), runner<TypeParam>::exit_flag::SUCCESS);
   ASSERT_LT(r.get_best_individual()->overall_fitness(), r.get_individual_zero()->overall_fitness());
   r.export_statistics("statistics.csv", ',');
 }
@@ -557,7 +557,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run_pause_resume) {
   r.pause();
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   r.resume();
-  ASSERT_EQ(fut.get(), runner<TypeParam>::SUCCESS);
+  ASSERT_EQ(fut.get(), runner<TypeParam>::exit_flag::SUCCESS);
 }
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run_pause_stop) {
@@ -581,7 +581,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run_pause_stop) {
   r.pause();
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   r.stop();
-  ASSERT_EQ(fut.get(), runner<TypeParam>::SUCCESS);
+  ASSERT_EQ(fut.get(), runner<TypeParam>::exit_flag::SUCCESS);
 }
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run_stop) {
@@ -603,7 +603,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run_stop) {
   auto fut = std::async(&runner<TypeParam>::run, &r);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   r.stop();
-  ASSERT_EQ(fut.get(), runner<TypeParam>::SUCCESS);
+  ASSERT_EQ(fut.get(), runner<TypeParam>::exit_flag::SUCCESS);
 }
 
 template <floating_point_type F> class population_initialization_fail_mock : public base_evaluation<F> {
@@ -645,7 +645,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, exit_on_population_initialization
   runner<TypeParam> r(std::move(s));
   r.add_log_stream(std::cout);
   auto fut = std::async(&runner<TypeParam>::run, &r);
-  ASSERT_EQ(fut.get(), runner<TypeParam>::SUCCESS);
+  ASSERT_EQ(fut.get(), runner<TypeParam>::exit_flag::SUCCESS);
 }
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, exit_on_population_initialization_failure_fail) {
@@ -667,7 +667,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, exit_on_population_initialization
   runner<TypeParam> r(std::move(s));
   r.add_log_stream(std::cout);
   auto fut = std::async(&runner<TypeParam>::run, &r);
-  ASSERT_EQ(fut.get(), runner<TypeParam>::FAILURE);
+  ASSERT_EQ(fut.get(), runner<TypeParam>::exit_flag::FAILURE);
 }
 
 TYPED_TEST(minimacore_genetic_algorithm_tests, iteration_callback_count) {

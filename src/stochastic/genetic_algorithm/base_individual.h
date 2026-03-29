@@ -74,7 +74,7 @@ namespace minimacore::genetic_algorithm {
   template <floating_point_type Fp_T>
   static const individual_ptr<Fp_T> &random_pick(const population_t<Fp_T> &selection_set) {
     std::random_device device{};
-    std::mt19937_64 generator{device()};
+    std::mt19937_64 generator{static_cast<std::mt19937_64::result_type>(device())};
     std::uniform_int_distribution<size_t> distribution{0, selection_set.size() - 1};
     return selection_set[distribution(generator)];
   }

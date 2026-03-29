@@ -12,7 +12,7 @@
 #include <minimacore_concepts.h>
 #include <thread_pool.h>
 
-#if defined(__has_include)
+#ifdef __has_include
 #if __has_include(<execution>)
 #include <execution>
 #if defined(__cpp_lib_execution) && __cpp_lib_execution >= 201603L
@@ -28,13 +28,13 @@ namespace minimacore::genetic_algorithm {
   using time_point_t = std::chrono::time_point<clock_t>;
   using duration_t = std::chrono::duration<double, std::milli>;
 
-  template <floating_point_type F> class runner {
-    using evaluation_t = unique_ptr<base_evaluation<F>>;
+  template <floating_point_type Fp_T> class runner {
+    using evaluation_t = unique_ptr<base_evaluation<Fp_T>>;
 
   public:
-    enum exit_flag { SUCCESS = 0, FAILURE };
+    enum class exit_flag : std::uint8_t { SUCCESS = 0, FAILURE };
 
-    enum class state { WAITING = 0, RUNNING, PAUSING, PAUSED, STOPPING, STOPPED, DONE };
+    enum class state : std::uint8_t { WAITING = 0, RUNNING, PAUSING, PAUSED, STOPPING, STOPPED, DONE };
 
     void pause() {
       switch (_state) {
@@ -71,11 +71,11 @@ namespace minimacore::genetic_algorithm {
       }
     }
 
-    const shared_ptr<base_individual<F>> &get_best_individual() const {
+    const shared_ptr<base_individual<Fp_T>> &get_best_individual() const {
       return _best_individual;
     }
 
-    const shared_ptr<base_individual<F>> &get_individual_zero() const {
+    const shared_ptr<base_individual<Fp_T>> &get_individual_zero() const {
       return _individual_zero;
     }
 
@@ -100,12 +100,12 @@ namespace minimacore::genetic_algorithm {
       _log << logger::wrapped_uts_timestamp() << "Starting genetic algorithm...\n";
       initialize_individual_zero();
       if (!initialize_population()) {
-        display_final_message(FAILURE);
+        display_final_message(exit_flag::FAILURE);
         return exit_flag::FAILURE;
       }
       _setup.run_iteration_callbacks();
       _statistics.register_statistic(_population);
-      _setup.add_termination(std::make_unique<generation_termination<F>>(_setup.generations()));
+      _setup.add_termination(std::make_unique<generation_termination<Fp_T>>(_setup.generations()));
       while (std::none_of(
 #ifdef HAS_EXECUTION_POLICIES
           std::execution::par_unseq,
@@ -136,23 +136,23 @@ namespace minimacore::genetic_algorithm {
           break;
         }
         case state::STOPPED: {
-          display_final_message(SUCCESS);
-          return SUCCESS;
+          display_final_message(exit_flag::SUCCESS);
+          return exit_flag::SUCCESS;
         }
         default:
           break;
         }
       }
       _state = state::DONE;
-      display_final_message(SUCCESS);
-      return SUCCESS;
+      display_final_message(exit_flag::SUCCESS);
+      return exit_flag::SUCCESS;
     }
 
-    setup<F> &get_setup() {
+    setup<Fp_T> &get_setup() {
       return _setup;
     }
 
-    const population_t<F> &get_population() const {
+    const population_t<Fp_T> &get_population() const {
       return _population;
     }
 
@@ -161,7 +161,8 @@ namespace minimacore::genetic_algorithm {
       return std::chrono::duration_cast<std::chrono::milliseconds>(duration);
     }
 
-    explicit runner(setup<F> s) : _statistics(s.generations()), _setup(std::move(s)), _threads(s.get_thread_count()) {}
+    explicit runner(setup<Fp_T> s)
+        : _statistics(s.generations()), _setup(std::move(s)), _threads(s.get_thread_count()) {}
 
   private:
     void display_final_message(exit_flag flag) {
@@ -175,7 +176,7 @@ namespace minimacore::genetic_algorithm {
                              [](size_t i, const evaluation_t &eval) { return i + eval->objective_count(); });
     }
 
-    F evaluate(const individual_ptr<F> &individual) {
+    Fp_T evaluate(const individual_ptr<Fp_T> &individual) {
       size_t counter = 0; // used to count objectives and align fitness values
       for (auto &evaluation : _setup.evaluations()) {
         counter = (*evaluation)(*individual, counter);
@@ -187,13 +188,13 @@ namespace minimacore::genetic_algorithm {
     void initialize_individual_zero() {
       _log << logger::wrapped_uts_timestamp() << "Initializing individual zero\n";
       _individual_zero =
-          std::make_shared<base_individual<F>>(_setup.get_genome_generator().initial_genome(), objective_count());
+          std::make_shared<base_individual<Fp_T>>(_setup.get_genome_generator().initial_genome(), objective_count());
       evaluate(_individual_zero);
       _log << logger::wrapped_uts_timestamp() << "Individual zero fitness: " << _individual_zero->overall_fitness()
            << '\n';
     }
 
-    bool initialize_individual(const individual_ptr<F> &individual) {
+    bool initialize_individual(const individual_ptr<Fp_T> &individual) {
       size_t contiguous_failures = 0;
       _setup.get_genome_generator()(individual);
       while (std::isnan(evaluate(individual)) &&
@@ -223,7 +224,7 @@ namespace minimacore::genetic_algorithm {
       _log << logger::wrapped_uts_timestamp() << "Initializing population, size = " << _setup.population_size() << '\n';
       while (_population.size() < _setup.population_size()) {
         _population.emplace_back(
-            std::make_shared<base_individual<F>>(_setup.get_genome_generator().initial_genome(), objective_count()));
+            std::make_shared<base_individual<Fp_T>>(_setup.get_genome_generator().initial_genome(), objective_count()));
       }
 
       vector<std::future<bool>> futures;
@@ -233,33 +234,34 @@ namespace minimacore::genetic_algorithm {
 
       bool success_flag = true;
       std::ranges::for_each(futures, [this, &success_flag](auto &f) { success_flag &= f.get(); });
-      if (success_flag)
+      if (success_flag) {
         update_best_individual();
+      }
       return success_flag;
     }
 
-    void fill_population(population_t<F> &reproduction_set) {
+    void fill_population(population_t<Fp_T> &reproduction_set) {
       std::random_device device{};
-      std::mt19937_64 generator{device()};
-      std::uniform_real_distribution<F> distribution(0., 1.);
+      std::mt19937_64 generator{static_cast<std::mt19937_64::result_type>(device())};
+      std::uniform_real_distribution<Fp_T> distribution(0., 1.);
       while (_population.size() < _setup.population_size()) {
-        size_t count = _setup.population_size() - _population.size();
-        vector<std::future<individual_ptr<F>>> futures;
+        const size_t count{_setup.population_size() - _population.size()};
+        vector<std::future<individual_ptr<Fp_T>>> futures;
         futures.reserve(count);
         for (size_t i = 0; i < count; i++) {
-          F chance = distribution(generator);
-          individual_ptr<F> individual;
+          Fp_T chance = distribution(generator);
+          individual_ptr<Fp_T> individual;
           if (_setup.get_mutation().should_mutate()) {
-            individual = std::make_shared<base_individual<F>>(_setup.get_mutation()(*random_pick(reproduction_set)),
-                                                              objective_count());
+            individual = std::make_shared<base_individual<Fp_T>>(_setup.get_mutation()(*random_pick(reproduction_set)),
+                                                                 objective_count());
           } else {
-            individual = std::make_shared<base_individual<F>>(
+            individual = std::make_shared<base_individual<Fp_T>>(
                 _setup.crossover()(*random_pick(reproduction_set), *random_pick(reproduction_set)), objective_count());
           }
 
           futures.emplace_back(_threads.enqueue([this, individual]() {
             // Individuals are discarded if the evaluation fails
-            return std::isnan(evaluate(individual)) ? individual_ptr<F>(nullptr) : individual;
+            return std::isnan(evaluate(individual)) ? individual_ptr<Fp_T>(nullptr) : individual;
           }));
         }
 
@@ -274,11 +276,11 @@ namespace minimacore::genetic_algorithm {
           std::ranges::min(_population, [](auto &a, auto &b) { return a->overall_fitness() < b->overall_fitness(); });
     }
 
-    population_t<F> _population;
-    individual_ptr<F> _best_individual{nullptr};
-    individual_ptr<F> _individual_zero{nullptr};
-    evolution_statistics<F> _statistics;
-    setup<F> _setup;
+    population_t<Fp_T> _population;
+    individual_ptr<Fp_T> _best_individual{nullptr};
+    individual_ptr<Fp_T> _individual_zero{nullptr};
+    evolution_statistics<Fp_T> _statistics;
+    setup<Fp_T> _setup;
     logger _log;
     thread_pool _threads;
     std::atomic<state> _state = state::WAITING;

@@ -8,7 +8,7 @@
 #include <random>
 #include <set>
 
-#if defined(__has_include)
+#ifdef __has_include
 #if __has_include(<execution>)
 #include <execution>
 #if defined(__cpp_lib_execution) && __cpp_lib_execution >= 201603L
@@ -19,66 +19,74 @@
 
 namespace minimacore::genetic_algorithm {
 
-  template <floating_point_type F> population_t<F> &sort(population_t<F> &population) {
+  template <floating_point_type Fp_T> population_t<Fp_T> &sort(population_t<Fp_T> &population) {
     std::sort(
 #ifdef HAS_EXECUTION_POLICIES
         std::execution::par_unseq,
 #endif
         population.begin(), population.end(),
-        [](const individual_ptr<F> &a, const individual_ptr<F> &b) { return *a < *b; });
+        [](const individual_ptr<Fp_T> &a, const individual_ptr<Fp_T> &b) { return *a < *b; });
     return population;
   }
 
-  template <floating_point_type F> class base_selection_for_reproduction {
+  template <floating_point_type Fp_T> class base_selection_for_reproduction {
   public:
-    virtual reproduction_selection_t<F> operator()(population_t<F> &population) const = 0;
-
+    virtual reproduction_selection_t<Fp_T> operator()(population_t<Fp_T> &population) const = 0;
+    base_selection_for_reproduction() = default;
+    base_selection_for_reproduction(const base_selection_for_reproduction&) = delete;
+    base_selection_for_reproduction(base_selection_for_reproduction&&) = delete;
+    base_selection_for_reproduction& operator=(const base_selection_for_reproduction&) = delete;
+    base_selection_for_reproduction& operator=(base_selection_for_reproduction&&) = delete;
     virtual ~base_selection_for_reproduction() = default;
   };
 
-  template <floating_point_type F>
-  class truncation_selection_for_reproduction : public base_selection_for_reproduction<F> {
+  template <floating_point_type Fp_T>
+  class truncation_selection_for_reproduction : public base_selection_for_reproduction<Fp_T> {
     size_t _selection_size = 0;
 
   public:
-    reproduction_selection_t<F> operator()(population_t<F> &population) const override {
-      reproduction_selection_t<F> result;
+    reproduction_selection_t<Fp_T> operator()(population_t<Fp_T> &population) const override {
+      reproduction_selection_t<Fp_T> result;
       result.reserve(_selection_size);
       sort(population);
-      for (size_t selected = 0; selected < _selection_size; selected++)
+      for (size_t selected = 0; selected < _selection_size; selected++) {
         result.push_back(population[selected]);
+      }
       return result;
     }
 
     explicit truncation_selection_for_reproduction(size_t selection_size) : _selection_size(selection_size) {}
   };
 
-  template <floating_point_type F>
-  class tournament_selection_for_reproduction : public base_selection_for_reproduction<F> {
+  template <floating_point_type Fp_T>
+  class tournament_selection_for_reproduction : public base_selection_for_reproduction<Fp_T> {
   public:
-    reproduction_selection_t<F> operator()(population_t<F> &population) const override {
+    reproduction_selection_t<Fp_T> operator()(population_t<Fp_T> &population) const override {
       std::uniform_int_distribution<size_t> dist(0, population.size() - 1);
-      reproduction_selection_t<F> result;
+      reproduction_selection_t<Fp_T> result;
       result.reserve(_selection_size);
       const size_t tournament_size = _tournament_size < population.size() ? _tournament_size : population.size();
       const size_t selection_size = _selection_size < population.size() ? _selection_size : population.size();
-      std::set<individual_ptr<F>> selected_individuals;
+      std::set<individual_ptr<Fp_T>> selected_individuals;
       std::random_device rd;
-      std::mt19937_64 gen(rd());
-      while (result.size() < selection_size) {
-        reproduction_selection_t<F> tournament_selection;
+      std::mt19937_64 gen(static_cast<std::mt19937_64::result_type>(rd()));
+      while (selection_size > result.size()) {
+        reproduction_selection_t<Fp_T> tournament_selection;
         while (tournament_selection.size() < tournament_size) {
           auto &selected_for_tournament = population[dist(gen)];
           if (std::find(tournament_selection.begin(), tournament_selection.end(), selected_for_tournament) ==
-              tournament_selection.end())
+              tournament_selection.end()) {
             tournament_selection.push_back(selected_for_tournament);
+          }
         }
 
-        auto winner = std::min_element(tournament_selection.begin(), tournament_selection.end(),
-                                       [](const individual_ptr<F> &a, const individual_ptr<F> &b) { return *a < *b; });
+        auto winner =
+            std::min_element(tournament_selection.begin(), tournament_selection.end(),
+                             [](const individual_ptr<Fp_T> &a, const individual_ptr<Fp_T> &b) { return *a < *b; });
 
-        if (auto pair = selected_individuals.insert(*winner); pair.second)
+        if (auto pair = selected_individuals.insert(*winner); pair.second) {
           result.push_back(*pair.first);
+        }
       }
       return result;
     }
@@ -91,17 +99,17 @@ namespace minimacore::genetic_algorithm {
     size_t _selection_size{0};
   };
 
-  template <floating_point_type F> using ranked_selection_t = vector<population_t<F>>;
+  template <floating_point_type Fp_T> using ranked_selection_t = vector<population_t<Fp_T>>;
 
   class ranked_selection {
   public:
-    enum select_by : int {
-      select_by_ranks = 0,
-      select_by_individuals,
+    enum class select_by : std::uint8_t {
+      RANKS = 0,
+      INDIVIDUALS,
     };
 
-    template <floating_point_type F>
-    static bool is_dominant(const individual_ptr<F> &individual, const reproduction_selection_t<F> &subgroup) {
+    template <floating_point_type Fp_T>
+    static bool is_dominant(const individual_ptr<Fp_T> &individual, const reproduction_selection_t<Fp_T> &subgroup) {
 #ifdef HAS_EXECUTION_POLICIES
       return std::all_of(std::execution::par_unseq, subgroup.begin(), subgroup.end(), [&](const auto &comparison) {
         if (individual != comparison) {
@@ -116,8 +124,9 @@ namespace minimacore::genetic_algorithm {
       return std::all_of(subgroup.begin(), subgroup.end(), [&](const auto &comparison) {
         if (individual != comparison) {
           bool is_dominant{false};
-          for (size_t i = 0; i < individual->get_object_fitnesses().size(); i++)
+          for (size_t i = 0; i < individual->get_object_fitnesses().size(); i++) {
             is_dominant = is_dominant || individual->objective_fitness(i) < comparison->objective_fitness(i);
+          }
           return is_dominant;
         }
         return true;
@@ -125,10 +134,10 @@ namespace minimacore::genetic_algorithm {
 #endif
     }
 
-    template <floating_point_type F> static ranked_selection_t<F> rank_population(const population_t<F> &population) {
-      ranked_selection_t<F> ranks;
-      size_t initial_population_size = population.size();
-      population_t<F> cpy(population);
+    template <floating_point_type Fp_T>
+    static ranked_selection_t<Fp_T> rank_population(const population_t<Fp_T> &population) {
+      ranked_selection_t<Fp_T> ranks;
+      population_t<Fp_T> cpy(population);
       while (!cpy.empty()) {
         auto &current_rank = ranks.emplace_back();
         for (auto &individual : cpy)
@@ -142,21 +151,21 @@ namespace minimacore::genetic_algorithm {
     }
 
   protected:
-    ranked_selection(size_t selection_size, select_by select_by)
+    ranked_selection(const size_t selection_size, select_by select_by)
         : _selection_size(selection_size), _select_by(select_by) {}
 
     size_t _selection_size{0};
     select_by _select_by{0};
   };
 
-  template <floating_point_type F>
-  class ranked_selection_for_reproduction : public base_selection_for_reproduction<F>, public ranked_selection {
+  template <floating_point_type Fp_T>
+  class ranked_selection_for_reproduction : public base_selection_for_reproduction<Fp_T>, public ranked_selection {
   public:
-    reproduction_selection_t<F> operator()(population_t<F> &population) const override {
+    reproduction_selection_t<Fp_T> operator()(population_t<Fp_T> &population) const override {
       auto ranks = rank_population(population);
-      reproduction_selection_t<F> result;
+      reproduction_selection_t<Fp_T> result;
       switch (_select_by) {
-      case ranked_selection::select_by_ranks: {
+      case select_by::RANKS: {
         size_t selected_amount{0};
         while (selected_amount < ranks.size() && selected_amount < _selection_size) {
           for (auto &individual : ranks[selected_amount++]) {
@@ -166,7 +175,7 @@ namespace minimacore::genetic_algorithm {
         return result;
         break;
       }
-      case ranked_selection::select_by_individuals:
+      case select_by::INDIVIDUALS:
       default:
         break;
       }
@@ -174,7 +183,7 @@ namespace minimacore::genetic_algorithm {
       size_t selected_amount{0};
       int count{0};
       while (selected_amount < _selection_size) {
-        reproduction_selection_t<F> subgroup;
+        reproduction_selection_t<Fp_T> subgroup;
 #ifdef HAS_EXECUTION_POLICIES
         std::for_each(std::execution::par_unseq, population.begin(), population.end(),
                       [&result, &subgroup](auto &individual) {
@@ -188,37 +197,42 @@ namespace minimacore::genetic_algorithm {
         std::for_each(population.begin(), population.end(), [&result, &subgroup](auto &individual) {
           if (std::find_if(result.begin(), result.end(), [&individual](auto &subgroup_individual) {
                 return individual == subgroup_individual;
-              }) == result.end())
+              }) == result.end()) {
             subgroup.push_back(individual);
+          }
         });
 #endif
         for (auto &subgroup_individual : subgroup) {
           if (is_dominant(subgroup_individual, subgroup)) {
             result.push_back(subgroup_individual);
-            if (_select_by == select_by_individuals && ++selected_amount < _selection_size)
+            if (_select_by == select_by::INDIVIDUALS && ++selected_amount < _selection_size)
               return result;
           }
         }
-        selected_amount += _select_by == select_by_ranks;
+        selected_amount += _select_by == select_by::RANKS;
       }
       return result;
     }
 
     ranked_selection_for_reproduction(size_t selection_size, select_by by)
-        : base_selection_for_reproduction<F>(), ranked_selection(selection_size, by) {}
+        : base_selection_for_reproduction<Fp_T>(), ranked_selection(selection_size, by) {}
   };
 
-  template <floating_point_type F> class base_selection_for_replacement {
+  template <floating_point_type Fp_T> class base_selection_for_replacement {
   public:
-    virtual population_t<F> &operator()(population_t<F> &population) const = 0;
-
+    virtual population_t<Fp_T> &operator()(population_t<Fp_T> &population) const = 0;
+    base_selection_for_replacement() = default;
+    base_selection_for_replacement(const base_selection_for_replacement&) = delete;
+    base_selection_for_replacement(base_selection_for_replacement&&) = delete;
+    base_selection_for_replacement& operator=(const base_selection_for_replacement&) = delete;
+    base_selection_for_replacement& operator=(base_selection_for_replacement&&) = delete;
     virtual ~base_selection_for_replacement() = default;
   };
 
-  template <floating_point_type F>
-  class generational_selection_for_replacement : public base_selection_for_replacement<F> {
+  template <floating_point_type Fp_T>
+  class generational_selection_for_replacement : public base_selection_for_replacement<Fp_T> {
   public:
-    population_t<F> &operator()(population_t<F> &population) const override {
+    population_t<Fp_T> &operator()(population_t<Fp_T> &population) const override {
       population.clear();
       return population;
     }
@@ -226,10 +240,10 @@ namespace minimacore::genetic_algorithm {
     generational_selection_for_replacement() = default;
   };
 
-  template <floating_point_type F>
-  class truncation_selection_for_replacement : public base_selection_for_replacement<F> {
+  template <floating_point_type Fp_T>
+  class truncation_selection_for_replacement : public base_selection_for_replacement<Fp_T> {
   public:
-    population_t<F> &operator()(population_t<F> &population) const override {
+    population_t<Fp_T> &operator()(population_t<Fp_T> &population) const override {
       sort(population);
       size_t elements_to_remove =
           _selection_size < population.size() ? population.size() - _selection_size : population.size();
@@ -244,27 +258,29 @@ namespace minimacore::genetic_algorithm {
     size_t _selection_size{0};
   };
 
-  template <floating_point_type F>
-  class ranked_selection_for_replacement : public base_selection_for_replacement<F>, public ranked_selection {
+  template <floating_point_type Fp_T>
+  class ranked_selection_for_replacement : public base_selection_for_replacement<Fp_T>, public ranked_selection {
   public:
-    population_t<F> &operator()(population_t<F> &population) const override {
-      size_t initial_population_size = population.size();
-      ranked_selection_t<F> ranks = rank_population(population);
+    population_t<Fp_T> &operator()(population_t<Fp_T> &population) const override {
+      const size_t initial_population_size = population.size();
+      ranked_selection_t<Fp_T> ranks = rank_population(population);
       population.clear();
       switch (_select_by) {
-      case ranked_selection::select_by_ranks:
-        for (size_t i{0}; ranks.size() - i > _selection_size;)
+      case select_by::RANKS:
+        for (size_t i{0}; ranks.size() - i > _selection_size;) {
           std::ranges::for_each(ranks[i++],
                                 [&population](const auto &individual) { population.push_back(individual); });
+        }
         break;
-      case ranked_selection::select_by_individuals: {
+      case select_by::INDIVIDUALS: {
         auto ranks_it = ranks.begin();
         auto current_rank_it = ranks_it->begin();
         while (population.size() < initial_population_size - _selection_size) {
           population.push_back(*current_rank_it);
           if (++current_rank_it == ranks_it->end()) {
-            if (ranks_it++ == ranks.end())
+            if (ranks_it++ == ranks.end()) {
               break;
+            }
             current_rank_it = ranks_it->begin();
           }
         }

@@ -6,15 +6,19 @@ Checks: |
   clang-analyzer-*,
   cppcoreguidelines-*,
   -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
   -cppcoreguidelines-avoid-magic-numbers,
   -cppcoreguidelines-pro-type-reinterpret-cast,
   -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   -cppcoreguidelines-pro-type-member-init,
   -cppcoreguidelines-non-private-member-variables-in-classes,
+  -cppcoreguidelines-narrowing-conversions,
+  -cppcoreguidelines-init-variables,
   -readability-convert-member-functions-to-static,
   -readability-magic-numbers,
-  -readability-identifier-length
+  -readability-identifier-length,
+  -readability-simplify-boolean-expr,
   -modernize-use-trailing-return-type,
   -modernize-use-nodiscard
 HeaderFilterRegex: 'src/.*|include/.*|tests/.*'
@@ -44,8 +48,10 @@ CheckOptions:
 
   # Members (prefix/suffix support)
   - { key: readability-identifier-naming.MemberCase, value: lower_case }
-  - { key: readability-identifier-naming.PrivateMemberSuffix, value: _ }
-  - { key: readability-identifier-naming.ProtectedMemberSuffix, value: _ }
+  - { key: readability-identifier-naming.PrivateMemberPrefix, value: _ }
+  - { key: readability-identifier-naming.ProtectedMemberPrefix, value: _ }
+  - { key: readability-identifier-naming.MethodCase, value: lower_case }
+  - { key: readability-identifier-naming.MethodIgnoredRegexp, value: '^_.*' }
 
   # Constants and macros
   - { key: readability-identifier-naming.ConstantCase, value: lower_case }

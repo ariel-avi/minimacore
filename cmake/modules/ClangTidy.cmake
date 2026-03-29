@@ -43,6 +43,34 @@ function(add_clang_tidy_for TARGET_NAME)
 
     set(_HEADER_FILTER "^(src|include|tests)/")
 
+    # Collect include directories from the target and its dependencies
+    set(_include_dirs)
+    get_target_property(_inc_dirs ${TARGET_NAME} INTERFACE_INCLUDE_DIRECTORIES)
+    if (_inc_dirs)
+        list(APPEND _include_dirs ${_inc_dirs})
+    endif()
+
+    get_target_property(_link_libs ${TARGET_NAME} INTERFACE_LINK_LIBRARIES)
+    if (_link_libs)
+        foreach(_lib IN LISTS _link_libs)
+            if (TARGET ${_lib})
+                get_target_property(_lib_inc_dirs ${_lib} INTERFACE_INCLUDE_DIRECTORIES)
+                if (_lib_inc_dirs)
+                    list(APPEND _include_dirs ${_lib_inc_dirs})
+                endif()
+            endif()
+        endforeach()
+    endif()
+
+    # Build extra args for include directories
+    set(_extra_include_args)
+    if (_include_dirs)
+        list(REMOVE_DUPLICATES _include_dirs)
+        foreach(_inc_dir IN LISTS _include_dirs)
+            list(APPEND _extra_include_args "-extra-arg=-I${_inc_dir}")
+        endforeach()
+    endif()
+
     if (APPLE)
         execute_process(
                 COMMAND xcrun --show-sdk-path
@@ -71,6 +99,7 @@ function(add_clang_tidy_for TARGET_NAME)
                 -extra-arg=-fno-modules
                 -extra-arg=-fno-implicit-modules
                 -extra-arg=-fno-implicit-module-maps
+                ${_extra_include_args}
                 -p "${CMAKE_BINARY_DIR}" ${_tidy_files}
                 COMMENT "Running clang-tidy for target ${TARGET_NAME}"
                 VERBATIM)
@@ -78,6 +107,7 @@ function(add_clang_tidy_for TARGET_NAME)
         add_custom_target(${_tidy_target}
                 COMMAND ${CLANG_TIDY_EXE}
                 -header-filter=${_HEADER_FILTER}
+                ${_extra_include_args}
                 -p "${CMAKE_BINARY_DIR}" ${_tidy_files}
                 COMMENT "Running clang-tidy for target ${TARGET_NAME}"
                 VERBATIM)

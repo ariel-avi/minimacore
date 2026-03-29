@@ -281,7 +281,7 @@ template <floating_point_type Fp_T> static constexpr Fp_T tolerance() {
 TYPED_TEST(minimacore_genetic_algorithm_tests, uniform_linear_crossover) {
   for (size_t i{0}; i < this->_population.size() / 2; i++) {
     const auto &individual_a = this->_population[i];
-    const auto &individual_b = this->_population[i + this->_population.size() / 2];
+    const auto &individual_b = this->_population[i + (this->_population.size() / 2)];
     uniform_linear_crossover<TypeParam> crossover(1., 2);
     auto genome = crossover(*individual_a, *individual_b);
     auto midpoint = (individual_b->genome() + individual_a->genome()) / 2;
@@ -619,7 +619,7 @@ TYPED_TEST(minimacore_genetic_algorithm_tests, setup_run_stop) {
 }
 
 template <floating_point_type Fp_T> class population_initialization_fail_mock : public base_evaluation<Fp_T> {
-  const size_t _max_failures = 0;
+  size_t _max_failures = 0;
   mutable std::atomic<size_t> _fail_count{0};
 
 public:

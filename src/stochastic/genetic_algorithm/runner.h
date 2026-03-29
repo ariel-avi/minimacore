@@ -157,12 +157,12 @@ namespace minimacore::genetic_algorithm {
     }
 
     [[nodiscard]] duration_t elapsed_time_ms() const {
-      auto duration = clock_t::now() - _start_time;
+      const auto duration = clock_t::now() - _start_time;
       return std::chrono::duration_cast<std::chrono::milliseconds>(duration);
     }
 
     explicit runner(setup<Fp_T> s)
-        : _statistics(s.generations()), _setup(std::move(s)), _threads(s.get_thread_count()) {}
+        : _statistics(s.generations()), _setup(std::move(s)), _threads(_setup.get_thread_count()) {}
 
   private:
     void display_final_message(exit_flag flag) {

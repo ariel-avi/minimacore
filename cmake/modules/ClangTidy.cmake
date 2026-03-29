@@ -42,6 +42,7 @@ function(add_clang_tidy_for TARGET_NAME)
     set(_tidy_target "clang-tidy_${TARGET_NAME}")
 
     set(_HEADER_FILTER "^(src|include|tests)/")
+    set(_EXCLUDE_HEADER_FILTER ".*\\.conan2.*|.*/gtest/.*|.*/gmock/.*|.*/benchmark/.*|/usr/.*")
 
     # Collect include directories from the target and its dependencies (recursively)
     set(_include_dirs)
@@ -120,6 +121,7 @@ function(add_clang_tidy_for TARGET_NAME)
         add_custom_target(${_tidy_target}
                 COMMAND ${CLANG_TIDY_EXE}
                 -header-filter=${_HEADER_FILTER}
+                --exclude-header-filter=${_EXCLUDE_HEADER_FILTER}
                 -extra-arg=-nostdinc++
                 -extra-arg=-isysroot
                 -extra-arg=${MACOS_SDK_PATH}
@@ -136,6 +138,7 @@ function(add_clang_tidy_for TARGET_NAME)
         add_custom_target(${_tidy_target}
                 COMMAND ${CLANG_TIDY_EXE}
                 -header-filter=${_HEADER_FILTER}
+                --exclude-header-filter=${_EXCLUDE_HEADER_FILTER}
                 ${_extra_include_args}
                 -p "${CMAKE_BINARY_DIR}" ${_tidy_files}
                 COMMENT "Running clang-tidy for target ${TARGET_NAME}"

@@ -4,10 +4,10 @@
 
 #include <concepts>
 
-template <typename T>
-concept floating_point_type = std::is_floating_point_v<T>;
+template <typename Fp_T>
+concept floating_point_type = std::is_floating_point_v<Fp_T>;
 
-template <typename E>
-concept enumerator = std::is_enum_v<E>;
+template <typename Enum_T>
+concept enumerator = std::is_enum_v<Enum_T>;
 
 #endif // MINIMACORE_MINIMACORE_CONCEPTS_H

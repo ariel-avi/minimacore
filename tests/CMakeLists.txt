@@ -1,16 +1,10 @@
 enable_testing()
-include(FetchContent)
 
-fetchcontent_declare(
-  GTest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG f8d7d77c06936315286eb55f8de22cd23c188571
-  FIND_PACKAGE_ARGS
-)
-fetchcontent_makeavailable(GTest)
+find_package(GTest)
 
 if (GTest_FOUND)
   include(GoogleTest)
+  find_package(Eigen3 REQUIRED)
   set(_TESTS_TARGET ${PROJECT_NAME}_tests)
 
   add_executable(${_TESTS_TARGET}

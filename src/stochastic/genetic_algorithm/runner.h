@@ -3,8 +3,6 @@
 #define MINIMACORE_RUNNER_H
 
 #include "base_evaluation.h"
-#include "base_individual_generator.h"
-#include "genetic_operators.h"
 #include "selection_operators.h"
 #include "setup.h"
 #include "termination_condition.h"
@@ -34,14 +32,14 @@ namespace minimacore::genetic_algorithm {
     using evaluation_t = unique_ptr<base_evaluation<F>>;
 
   public:
-    enum exit_flag { success = 0, failure };
+    enum exit_flag { SUCCESS = 0, FAILURE };
 
-    enum class state { waiting = 0, running, pausing, paused, stopping, stopped, done };
+    enum class state { WAITING = 0, RUNNING, PAUSING, PAUSED, STOPPING, STOPPED, DONE };
 
     void pause() {
       switch (_state) {
-      case state::running:
-        _state = state::pausing;
+      case state::RUNNING:
+        _state = state::PAUSING;
         _log << logger::wrapped_uts_timestamp() << "Pause requested, sending signal...\n";
         break;
       default:
@@ -51,10 +49,10 @@ namespace minimacore::genetic_algorithm {
 
     void resume() {
       switch (_state) {
-      case state::pausing:
-      case state::paused:
+      case state::PAUSING:
+      case state::PAUSED:
         _log << logger::wrapped_uts_timestamp() << "Resuming genetic algorithm...\n";
-        _state = state::running;
+        _state = state::RUNNING;
         break;
       default:
         break;
@@ -63,10 +61,10 @@ namespace minimacore::genetic_algorithm {
 
     void stop() {
       switch (_state) {
-      case state::running:
-      case state::pausing:
-      case state::paused:
-        _state = state::stopping;
+      case state::RUNNING:
+      case state::PAUSING:
+      case state::PAUSED:
+        _state = state::STOPPING;
         break;
       default:
         break;
@@ -87,21 +85,23 @@ namespace minimacore::genetic_algorithm {
 
     void export_statistics(const string &filename, char sep) {
       std::ofstream ofs(filename, std::ios::out);
-      if (!ofs.is_open() || ofs.bad())
+      if (!ofs.is_open() || ofs.bad()) {
         return;
+      }
       _statistics.write(ofs, sep);
     }
 
     exit_flag run() {
-      if (_state != state::waiting)
-        return exit_flag::failure;
+      if (_state != state::WAITING) {
+        return exit_flag::FAILURE;
+      }
       _start_time = std::chrono::high_resolution_clock::now();
-      _state = state::running;
+      _state = state::RUNNING;
       _log << logger::wrapped_uts_timestamp() << "Starting genetic algorithm...\n";
       initialize_individual_zero();
       if (!initialize_population()) {
-        display_final_message(failure);
-        return exit_flag::failure;
+        display_final_message(FAILURE);
+        return exit_flag::FAILURE;
       }
       _setup.run_iteration_callbacks();
       _statistics.register_statistic(_population);
@@ -114,7 +114,7 @@ namespace minimacore::genetic_algorithm {
           _setup.termination_conditions().begin(), _setup.termination_conditions().end(),
           [this](auto &condition) { return (*condition)(_statistics); })) {
         switch (_state) {
-        case state::running: {
+        case state::RUNNING: {
           auto reproduction_set = _setup.selection_for_reproduction()(_population);
           _setup.selection_for_replacement()(_population);
           fill_population(reproduction_set);
@@ -124,28 +124,28 @@ namespace minimacore::genetic_algorithm {
           _log << logger::wrapped_uts_timestamp() << "Generation " << _statistics.current_generation() << " complete\n";
           break;
         }
-        case state::pausing: {
-          _state = state::paused;
+        case state::PAUSING: {
+          _state = state::PAUSED;
           continue;
         }
-        case state::paused: {
+        case state::PAUSED: {
           continue;
         }
-        case state::stopping: {
-          _state = state::stopped;
+        case state::STOPPING: {
+          _state = state::STOPPED;
           break;
         }
-        case state::stopped: {
-          display_final_message(success);
-          return success;
+        case state::STOPPED: {
+          display_final_message(SUCCESS);
+          return SUCCESS;
         }
         default:
           break;
         }
       }
-      _state = state::done;
-      display_final_message(success);
-      return success;
+      _state = state::DONE;
+      display_final_message(SUCCESS);
+      return SUCCESS;
     }
 
     setup<F> &get_setup() {
@@ -161,7 +161,7 @@ namespace minimacore::genetic_algorithm {
       return std::chrono::duration_cast<std::chrono::milliseconds>(duration);
     }
 
-    explicit runner(setup<F> s) : _statistics(s.generations()), _threads(s.get_thread_count()), _setup(std::move(s)) {}
+    explicit runner(setup<F> s) : _statistics(s.generations()), _setup(std::move(s)), _threads(s.get_thread_count()) {}
 
   private:
     void display_final_message(exit_flag flag) {
@@ -177,8 +177,9 @@ namespace minimacore::genetic_algorithm {
 
     F evaluate(const individual_ptr<F> &individual) {
       size_t counter = 0; // used to count objectives and align fitness values
-      for (auto &evaluation : _setup.evaluations())
+      for (auto &evaluation : _setup.evaluations()) {
         counter = (*evaluation)(*individual, counter);
+      }
       _statistics.increment_evaluation_count(counter);
       return individual->overall_fitness();
     }
@@ -201,9 +202,9 @@ namespace minimacore::genetic_algorithm {
         contiguous_failures++;
         switch (_state) {
         [[unlikely]]
-        case state::stopping:
+        case state::STOPPING:
         [[unlikely]]
-        case state::stopped:
+        case state::STOPPED:
           return false;
         default:
           break;
@@ -280,7 +281,7 @@ namespace minimacore::genetic_algorithm {
     setup<F> _setup;
     logger _log;
     thread_pool _threads;
-    std::atomic<state> _state = state::waiting;
+    std::atomic<state> _state = state::WAITING;
     time_point_t _start_time;
   };
 

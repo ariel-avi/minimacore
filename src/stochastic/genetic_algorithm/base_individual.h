@@ -14,40 +14,42 @@ namespace minimacore::genetic_algorithm {
   using std::unique_ptr;
   using std::vector;
 
-  template <floating_point_type F> using genome_t = Eigen::VectorX<F>;
+  template <floating_point_type Fp_T> using genome_t = Eigen::VectorX<Fp_T>;
 
-  template <floating_point_type F> class base_individual {
+  template <floating_point_type Fp_T> class base_individual {
 
   public:
-    F overall_fitness() const {
+    Fp_T overall_fitness() const {
       return _fitness_values.sum();
     }
 
     auto operator<=>(const base_individual &other) const {
-      if (overall_fitness() < other.overall_fitness())
+      if (overall_fitness() < other.overall_fitness()) {
         return -1;
-      if (overall_fitness() > other.overall_fitness())
+      }
+      if (overall_fitness() > other.overall_fitness()) {
         return 1;
+      }
       return 0;
     }
 
-    void set_objective_fitness(size_t index, F value) {
+    void set_objective_fitness(size_t index, Fp_T value) {
       _fitness_values(index) = value;
     }
 
-    const Eigen::VectorX<F> &get_object_fitnesses() const {
+    const Eigen::VectorX<Fp_T> &get_object_fitnesses() const {
       return _fitness_values;
     }
 
-    F objective_fitness(size_t index) const {
+    Fp_T objective_fitness(size_t index) const {
       return _fitness_values(index);
     }
 
-    const genome_t<F> &genome() const {
+    const genome_t<Fp_T> &genome() const {
       return _genome;
     }
 
-    genome_t<F> &genome() {
+    genome_t<Fp_T> &genome() {
       return _genome;
     }
 
@@ -55,21 +57,21 @@ namespace minimacore::genetic_algorithm {
       return _fitness_values.allFinite();
     }
 
-    explicit base_individual(genome_t<F> genome, long objective_count)
+    explicit base_individual(genome_t<Fp_T> genome, long objective_count)
         : _genome(genome), _fitness_values(objective_count) {
       _fitness_values.setConstant(NAN);
     }
 
   private:
-    genome_t<F> _genome;
-    Eigen::VectorX<F> _fitness_values;
+    genome_t<Fp_T> _genome;
+    Eigen::VectorX<Fp_T> _fitness_values;
   };
 
-  template <floating_point_type F> using individual_ptr = shared_ptr<base_individual<F>>;
-  template <floating_point_type F> using population_t = vector<individual_ptr<F>>;
-  template <floating_point_type F> using reproduction_selection_t = vector<individual_ptr<F>>;
+  template <floating_point_type Fp_T> using individual_ptr = shared_ptr<base_individual<Fp_T>>;
+  template <floating_point_type Fp_T> using population_t = vector<individual_ptr<Fp_T>>;
+  template <floating_point_type Fp_T> using reproduction_selection_t = vector<individual_ptr<Fp_T>>;
 
-  template <floating_point_type F> static const individual_ptr<F> &random_pick(const population_t<F> &selection_set) {
+  template <floating_point_type Fp_T> static const individual_ptr<Fp_T> &random_pick(const population_t<Fp_T> &selection_set) {
     std::random_device device{};
     std::mt19937_64 generator{device()};
     std::uniform_int_distribution<size_t> distribution{0, selection_set.size() - 1};

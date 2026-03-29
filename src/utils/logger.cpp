@@ -1,5 +1,4 @@
 
 #include "logger.h"
 
-namespace minimacore {
-} // minimacore
+namespace minimacore {} // namespace minimacore

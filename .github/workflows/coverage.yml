@@ -57,23 +57,14 @@ jobs:
       - name: Build tests
         run: cmake --build --preset conan-debug --target minimacore_tests -j$(nproc)
 
-      - name: Capture baseline coverage
-        run: |
-          lcov --capture --initial --no-external \
-            --directory build/Debug \
-            --output-file coverage_baseline.info
-
       - name: Run tests
         run: ctest --test-dir build/Debug --output-on-failure
 
-      - name: Capture post-test coverage
+      - name: Capture coverage
         run: |
           lcov --capture --no-external \
             --directory build/Debug \
-            --output-file coverage_total.info
-
-      - name: Merge coverage data
-        run: lcov -a coverage_baseline.info -a coverage_total.info -o coverage.info
+            --output-file coverage.info
 
       - name: Archive coverage report
         uses: actions/upload-artifact@v4

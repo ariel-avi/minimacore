@@ -2,7 +2,6 @@ name: Lint and Format
 
 on:
   push:
-  pull_request:
 
 jobs:
   clang:
@@ -12,20 +11,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install clang-tidy and clang-format (21+)
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
         run: |
-          set -euxo pipefail
           sudo apt-get update
-          sudo apt-get install -y wget lsb-release gnupg g++
-          # Add official LLVM APT repository for Ubuntu 24.04 (noble)
-          echo "deb [signed-by=/usr/share/keyrings/apt.llvm.org.gpg] http://apt.llvm.org/noble/ llvm-toolchain-noble-21 main" | sudo tee /etc/apt/sources.list.d/llvm-21.list
-          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/apt.llvm.org.gpg
-          sudo apt-get update
-          # Install specific LLVM 21 tools
-          sudo apt-get install -y clang-tidy-21 clang-format-21
-          # Make them the default clang-tidy/clang-format on PATH
-          sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-21 100
-          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-21 100
+          sudo apt-get install -y lcov gcc g++ python3-pip
 
       - name: Setup CMake 3.30.x
         uses: jwlawson/actions-setup-cmake@v2
@@ -69,6 +63,21 @@ jobs:
             -b missing \
             -g CMakeDeps -g CMakeToolchain
         shell: bash
+
+      - name: Install clang-tidy and clang-format (21+)
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y wget lsb-release gnupg g++
+          # Add official LLVM APT repository for Ubuntu 24.04 (noble)
+          echo "deb [signed-by=/usr/share/keyrings/apt.llvm.org.gpg] http://apt.llvm.org/noble/ llvm-toolchain-noble-21 main" | sudo tee /etc/apt/sources.list.d/llvm-21.list
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/apt.llvm.org.gpg
+          sudo apt-get update
+          # Install specific LLVM 21 tools
+          sudo apt-get install -y clang-tidy-21 clang-format-21
+          # Make them the default clang-tidy/clang-format on PATH
+          sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-21 100
+          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-21 100
 
       - name: Configure (Release)
         timeout-minutes: 10

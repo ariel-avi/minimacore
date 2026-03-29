@@ -52,12 +52,10 @@ jobs:
 
       - name: Configure
         run: |
-          cmake -S . -B build/Debug \
-            -DCMAKE_BUILD_TYPE=Coverage \
-            -DCMAKE_TOOLCHAIN_FILE=build/Debug/generators/conan_toolchain.cmake
+          cmake --preset conan-debug -DCMAKE_BUILD_TYPE=Coverage 
 
       - name: Build tests
-        run: cmake --build build/Debug --target minimacore_tests -j$(nproc)
+        run: cmake --build --preset conan-debug --target minimacore_tests -j$(nproc)
 
       - name: Capture baseline coverage
         run: |

@@ -33,10 +33,10 @@ namespace minimacore::genetic_algorithm {
   public:
     virtual reproduction_selection_t<Fp_T> operator()(population_t<Fp_T> &population) const = 0;
     base_selection_for_reproduction() = default;
-    base_selection_for_reproduction(const base_selection_for_reproduction&) = delete;
-    base_selection_for_reproduction(base_selection_for_reproduction&&) = delete;
-    base_selection_for_reproduction& operator=(const base_selection_for_reproduction&) = delete;
-    base_selection_for_reproduction& operator=(base_selection_for_reproduction&&) = delete;
+    base_selection_for_reproduction(const base_selection_for_reproduction &) = delete;
+    base_selection_for_reproduction(base_selection_for_reproduction &&) = delete;
+    base_selection_for_reproduction &operator=(const base_selection_for_reproduction &) = delete;
+    base_selection_for_reproduction &operator=(base_selection_for_reproduction &&) = delete;
     virtual ~base_selection_for_reproduction() = default;
   };
 
@@ -222,10 +222,10 @@ namespace minimacore::genetic_algorithm {
   public:
     virtual population_t<Fp_T> &operator()(population_t<Fp_T> &population) const = 0;
     base_selection_for_replacement() = default;
-    base_selection_for_replacement(const base_selection_for_replacement&) = delete;
-    base_selection_for_replacement(base_selection_for_replacement&&) = delete;
-    base_selection_for_replacement& operator=(const base_selection_for_replacement&) = delete;
-    base_selection_for_replacement& operator=(base_selection_for_replacement&&) = delete;
+    base_selection_for_replacement(const base_selection_for_replacement &) = delete;
+    base_selection_for_replacement(base_selection_for_replacement &&) = delete;
+    base_selection_for_replacement &operator=(const base_selection_for_replacement &) = delete;
+    base_selection_for_replacement &operator=(base_selection_for_replacement &&) = delete;
     virtual ~base_selection_for_replacement() = default;
   };
 

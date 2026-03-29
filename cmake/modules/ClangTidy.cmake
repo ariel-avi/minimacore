@@ -43,24 +43,53 @@ function(add_clang_tidy_for TARGET_NAME)
 
     set(_HEADER_FILTER "^(src|include|tests)/")
 
-    # Collect include directories from the target and its dependencies
+    # Collect include directories from the target and its dependencies (recursively)
     set(_include_dirs)
-    get_target_property(_inc_dirs ${TARGET_NAME} INTERFACE_INCLUDE_DIRECTORIES)
-    if (_inc_dirs)
-        list(APPEND _include_dirs ${_inc_dirs})
-    endif()
+    set(_targets_to_process ${TARGET_NAME})
+    set(_visited_targets)
 
-    get_target_property(_link_libs ${TARGET_NAME} INTERFACE_LINK_LIBRARIES)
-    if (_link_libs)
-        foreach(_lib IN LISTS _link_libs)
-            if (TARGET ${_lib})
-                get_target_property(_lib_inc_dirs ${_lib} INTERFACE_INCLUDE_DIRECTORIES)
-                if (_lib_inc_dirs)
-                    list(APPEND _include_dirs ${_lib_inc_dirs})
-                endif()
+    while(_targets_to_process)
+        list(POP_FRONT _targets_to_process _current_target)
+
+        # Skip if already visited
+        if (_current_target IN_LIST _visited_targets)
+            continue()
+        endif()
+
+        # Try to resolve alias-style names (e.g., namespace::target -> namespace_target)
+        if (NOT TARGET ${_current_target})
+            string(REPLACE "::" "_" _alt_target "${_current_target}")
+            if (TARGET ${_alt_target})
+                set(_current_target ${_alt_target})
+            else()
+                continue()
             endif()
-        endforeach()
-    endif()
+        endif()
+
+        # Resolve alias targets to their actual targets
+        get_target_property(_aliased_target ${_current_target} ALIASED_TARGET)
+        if (_aliased_target)
+            set(_current_target ${_aliased_target})
+            # Check again if we've already visited the aliased target
+            if (_current_target IN_LIST _visited_targets)
+                continue()
+            endif()
+        endif()
+
+        list(APPEND _visited_targets ${_current_target})
+
+        # Get include directories from this target
+        get_target_property(_inc_dirs ${_current_target} INTERFACE_INCLUDE_DIRECTORIES)
+        if (_inc_dirs AND NOT _inc_dirs STREQUAL "_inc_dirs-NOTFOUND")
+            list(APPEND _include_dirs ${_inc_dirs})
+        endif()
+
+        # Add linked libraries to the process queue
+        get_target_property(_link_libs ${_current_target} INTERFACE_LINK_LIBRARIES)
+        if (_link_libs AND NOT _link_libs STREQUAL "_link_libs-NOTFOUND")
+            list(APPEND _targets_to_process ${_link_libs})
+        endif()
+    endwhile()
 
     # Build extra args for include directories
     set(_extra_include_args)

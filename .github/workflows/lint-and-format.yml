@@ -38,7 +38,7 @@ jobs:
           path: ~/.conan2
           key: conan2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('conanfile.*') }}
           restore-keys: |
-            conan2-${{ runner.os }}-${{ runner.arch }}-
+            conan2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('conanfile.*') }}
 
       - name: Install Conan and prepare dependencies (Release)
         timeout-minutes: 10

@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install LCOV
         run: apt-get update && apt-get install -y lcov
@@ -23,7 +23,7 @@ jobs:
         run: sh ci/coverage.sh
 
       - name: Archive Coverage Reports
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v5
         with:
           name: coverage_reports
           path: coverage.info

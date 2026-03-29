@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -26,7 +26,7 @@ jobs:
         run: ctest --test-dir build/tests -C Release --output-junit out.xml
 
       - name: Archive Test Outputs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v5
         with:
           name: minimacore_tests_report
           path: build/tests/out.xml

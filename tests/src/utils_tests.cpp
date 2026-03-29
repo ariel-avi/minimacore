@@ -1,16 +1,16 @@
 //
-//#include <gtest/gtest.h>
-//#include <thread_pool.h>
-//#include <chrono>
-//#include <iostream>
+// #include <gtest/gtest.h>
+// #include <thread_pool.h>
+// #include <chrono>
+// #include <iostream>
 //
-//using namespace minimacore;
+// using namespace minimacore;
 //
-//class thread_pool_tests : public ::testing::Test {
-//protected:
+// class thread_pool_tests : public ::testing::Test {
+// protected:
 //  std::atomic_int counter{0};
 //
-//public:
+// public:
 //  void do_work()
 //  {
 //    std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -18,7 +18,7 @@
 //  }
 //};
 //
-//TEST_F(thread_pool_tests, run_concurrently)
+// TEST_F(thread_pool_tests, run_concurrently)
 //{
 //
 //  thread_pool pool(2);

@@ -51,49 +51,111 @@ Targets in MinimaCore follow the naming convention:
 
 Replace `<ALGORITHM_NAME>` with the algorithm you wish to use (follow the naming convention in the `src/` folder). This
 target is an alias to an interface target that includes the library's headers. Specialized targets (with defined
-floating-point types) will be introduced in the future
+floating-point types) will be introduced in the future.
 
 Currently available targets:
 
 `minimacore::genetic_algorithm` (incomplete)
 
+## Dependencies
+
+### C++23 capable compiler
+
+This library uses C++23 features, therefore, it is required that your compiler supports C++23.
+
+### CMake >= 3.25
+
+This project is CMake-based. CMake version 3.25 or later is required.
+
+### Conan 2
+
+MinimaCore uses [Conan](https://conan.io/) as the dependency manager. Install it via pip if you don't have it:
+
+```shell
+pip install conan
+```
+
+Conan manages the following dependencies:
+
+- **Eigen3** — matrix and vector operations
+- **Google Test** — unit testing framework
+- **Google Benchmark** — micro-benchmarking library
+
 ## Build
 
-minimacore uses [Conan](https://conan.io/) as the dependency manager. To make the dependencies available for CMake,
-follow the steps given below
+### Step 1 — Install dependencies with Conan
 
-### Windows
+#### Linux / macOS
 
-To use dependencies in Debug and Release mode on MSVC, you have to build the dependencies packages for Debug and Release
-separately:
+Install dependencies for Release:
 
-```commandline
+```shell
 conan install . --build=missing -s build_type=Release
 ```
 
-```commandline
+Or for Debug:
+
+```shell
 conan install . --build=missing -s build_type=Debug
 ```
 
-When calling CMake to compile with MSVC, make sure to use Visual Studio's generator and add the path
-to `conan_toolchain.cmake` file.
+#### Windows (MSVC)
+
+On MSVC, install dependencies for both configurations separately:
 
 ```commandline
-cmake .. -DCAMKE_TOOL_CHAIN_FILE=<path/to/root>/build/generators/conan_toolchain.cmake -G "Visual Studio 17 2022"
+conan install . --build=missing -s build_type=Release
+conan install . --build=missing -s build_type=Debug
 ```
 
-### Linux
+### Step 2 — Configure and build with CMake
 
-Compilation on Linux is more straight forward.
+Conan generates CMake presets. Use them to configure and build:
+
+#### Release
 
 ```shell
-conan install . --build=missing
+cmake --preset conan-release
+cmake --build --preset conan-release
 ```
 
-Then assign the generated conan toolchain file to your CMake command:
+#### Debug
 
 ```shell
-cmake .. -DCAMKE_TOOL_CHAIN_FILE=<path/to/root>/build/generators/conan_toolchain.cmake
+cmake --preset conan-debug
+cmake --build --preset conan-debug
+```
+
+#### Windows (MSVC) — without presets
+
+If presets are not available, pass the toolchain file manually:
+
+```commandline
+cmake .. -DCMAKE_TOOLCHAIN_FILE=build/Release/generators/conan_toolchain.cmake -G "Visual Studio 17 2022"
+cmake --build . --config Release
+```
+
+## Running the Tests
+
+Tests are built automatically alongside the main library when Google Test is found. After building, run them using CTest:
+
+#### Release
+
+```shell
+ctest --preset conan-release
+```
+
+#### Debug
+
+```shell
+ctest --preset conan-debug
+```
+
+Alternatively, run the test binary directly (from the build output directory):
+
+```shell
+./build/Release/minimacore_tests     # Release
+./build/Debug/minimacore_tests       # Debug
 ```
 
 ## Examples
@@ -102,38 +164,6 @@ The examples can be accessed in the [examples](examples) directory. Here is a li
 
 - Genetic Algorithm
     - [Rastrigin Function](examples/benchmark_functions/rastrigin/rastrigin.md)
-
-## Dependencies
-
-### C++20 capable compiler
-
-This library uses [concepts](https://en.cppreference.com/w/cpp/language/constraints) (C++20), therefore, it is required
-that your compiler is C++20-capable.
-
-### CMake
-
-This project is CMake based, therefore, users are encouraged to use CMake when using the library as well.
-
-### Google Test
-
-MinimaCore uses [Google Test](https://github.com/google/googletest) as unit testing framework. Sources for unit testing
-can be found at [tests/src](tests/src).
-
-### Google Benchmark
-
-Together with Google Test, MinimaCore uses Google Benchmark as the micro benchmark library. This is only required to
-compile and run smaller scripts that compare different approaches to the same problem.
-
-### Eigen3
-
-We decided to use Eigen3 as the matrix and vector operation calculations. Some reasons:
-
-1. Eigen is open-source
-2. Eigen is one of the [fastest and most efficient](https://eigen.tuxfamily.org/index.php?title=Benchmark) BLAS C++
-   libraries
-3. There are many
-   [enterprise-level projects using Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page#Projects_using_Eigen)
-4. It works with any floating point type
 
 # How to contribute
 

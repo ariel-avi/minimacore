@@ -100,11 +100,20 @@ function(add_clang_tidy_for TARGET_NAME)
         endforeach()
     endif()
 
-    # Pass implicit compiler include paths (e.g. GCC stdlib on Linux) so clang-tidy
+    # Pass implicit compiler include paths (e.g. GCC libstdc++ on Linux) so clang-tidy
     # can resolve standard library headers when the build compiler differs from clang.
     # Not needed on Apple: stdlib headers are already handled via -isysroot + explicit libc++ path.
+    #
+    # GCC's compiler-internal directories (paths containing /lib/gcc/) are deliberately
+    # excluded: they contain arch-specific headers (xmmintrin.h, emmintrin.h, …) that
+    # use GCC-only __builtin_ia32_* intrinsics. Clang defines many of those functions as
+    # true builtins, so GCC's header redefines them with a conflicting signature. Clang
+    # provides its own correct versions from its resource directory automatically.
     if (NOT APPLE)
         foreach(_inc_dir IN LISTS CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES)
+            if (_inc_dir MATCHES ".*/lib/gcc/")
+                continue()
+            endif()
             list(APPEND _extra_include_args "-extra-arg=-isystem${_inc_dir}")
         endforeach()
     endif()
@@ -146,7 +155,6 @@ function(add_clang_tidy_for TARGET_NAME)
                 COMMAND ${CLANG_TIDY_EXE}
                 -header-filter=${_HEADER_FILTER}
                 -extra-arg=-std=c++${CMAKE_CXX_STANDARD}
-                -extra-arg=-xc++
                 ${_extra_include_args}
                 -p "${CMAKE_BINARY_DIR}" ${_tidy_files}
                 COMMENT "Running clang-tidy for target ${TARGET_NAME}"

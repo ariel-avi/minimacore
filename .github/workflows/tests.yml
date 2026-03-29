@@ -83,4 +83,4 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: minimacore_tests_report
-          path: out.xml
+          path: build/Release/out.xml

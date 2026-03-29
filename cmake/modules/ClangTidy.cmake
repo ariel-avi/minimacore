@@ -145,6 +145,8 @@ function(add_clang_tidy_for TARGET_NAME)
         add_custom_target(${_tidy_target}
                 COMMAND ${CLANG_TIDY_EXE}
                 -header-filter=${_HEADER_FILTER}
+                -extra-arg=-std=c++${CMAKE_CXX_STANDARD}
+                -extra-arg=-xc++
                 ${_extra_include_args}
                 -p "${CMAKE_BINARY_DIR}" ${_tidy_files}
                 COMMENT "Running clang-tidy for target ${TARGET_NAME}"

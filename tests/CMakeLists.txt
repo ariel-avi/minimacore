@@ -1,8 +1,8 @@
-enable_testing()
-
 find_package(GTest)
 
 if (GTest_FOUND)
+    include(CTest)
+    set(CTEST_OUTPUT_ON_FAILURE ON)
     include(GoogleTest)
     find_package(Eigen3 REQUIRED)
     set(_TESTS_TARGET ${PROJECT_NAME}_tests)
@@ -19,7 +19,9 @@ if (GTest_FOUND)
     add_clang_format_for(${_TESTS_TARGET} ${_TESTS_SRC})
     add_clang_tidy_for(${_TESTS_TARGET} ${_TESTS_SRC})
 
-    gtest_discover_tests(${_TESTS_TARGET})
+    gtest_discover_tests(${_TESTS_TARGET}
+            DISCOVERY_TIMEOUT 30
+    )
 
     if (UNIX AND "${CMAKE_BUILD_TYPE}" MATCHES "^Debug")
         include(CodeCoverage OPTIONAL)

@@ -95,7 +95,7 @@ int main(int argc, char** argv)
   };
   r.get_setup().add_callback(save_individuals);
   r.add_log_stream(std::cout);
-  if (r.run() == runner<double>::success) {
+  if (r.run() == runner<double>::exit_flag::SUCCESS) {
     r.export_statistics("rastrigin_statistics.csv", ',');
     return 0;
   }

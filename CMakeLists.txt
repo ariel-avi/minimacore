@@ -9,5 +9,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 include(ClangFormat)
 include(ClangTidy)
 add_subdirectory(src)
-add_subdirectory(tests)
 add_subdirectory(examples)
+
+enable_testing()
+add_subdirectory(tests)

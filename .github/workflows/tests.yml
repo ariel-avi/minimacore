@@ -16,17 +16,71 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure CMake
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Setup CMake 3.30.x
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.30.x'
+
+      - name: Cache Conan packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.conan2
+          key: conan2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('conanfile.*') }}
+          restore-keys: |
+            conan2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('conanfile.*') }}
+
+      - name: Install Conan and prepare dependencies (Release)
+        timeout-minutes: 10
+        run: |
+          python -m pip install --upgrade conan
+          conan --version
+          conan profile detect --force
+          
+          conan remote add conancenter https://center.conan.io || true
+          conan remote enable conancenter || true
+          
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            if [ "${{ matrix.cmake_arch }}" = "Win32" ]; then
+              ARCH_ARG="-s arch=x86"
+            else
+              ARCH_ARG="-s arch=x86_64"
+            fi
+            COMPILER_ARGS=""  # MSVC binaries are broadly available
+          elif [ "${{ matrix.os }}" = "linux" ]; then
+            ARCH_ARG=""
+            COMPILER_ARGS="-s compiler=gcc -s compiler.version=13 -s compiler.cppstd=20"
+          elif [ "${{ matrix.os }}" = "macos" ]; then
+            ARCH_ARG="-s arch=armv8 -s os=Macos"
+            COMPILER_ARGS="-s compiler=apple-clang -s compiler.version=15 -s compiler.libcxx=libc++ -s compiler.cppstd=20"
+          fi
+          
+          conan install . -s build_type=Release ${ARCH_ARG} ${COMPILER_ARGS} \
+            -b missing \
+            -g CMakeDeps -g CMakeToolchain
+        shell: bash
+
+      - name: Configure (Release)
+        timeout-minutes: 10
+        run: |
+          if [ "${{ matrix.os }}" = "windows" ]; then
+            PRESET=conan-default
+          else
+            PRESET=conan-release
+          fi
+          cmake --preset $PRESET
+        shell: bash
 
       - name: Build
-        run: cmake --build build/tests --config Release --target minimacore_tests
+        run: cmake --build --preset conan-release --target minimacore_tests
 
-      - name: Run Tests
-        run: ctest --test-dir build/tests -C Release --output-junit out.xml
+      - name: Run tests
+        timeout-minutes: 10
+        run: |
+          ctest --preset conan-release --output-junit out.xml
+        shell: bash
 
       - name: Archive Test Outputs
         uses: actions/upload-artifact@v5
         with:
           name: minimacore_tests_report
-          path: build/tests/out.xml
+          path: out.xml

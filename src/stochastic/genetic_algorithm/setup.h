@@ -2,12 +2,23 @@
 #ifndef MINIMACORE_SETUP_H
 #define MINIMACORE_SETUP_H
 
-#include "selection_operators.h"
-#include "genetic_operators.h"
 #include "base_evaluation.h"
 #include "base_individual_generator.h"
+#include "genetic_operators.h"
+#include "selection_operators.h"
 #include "termination_condition.h"
+
 #include <functional>
+#include <thread>
+
+#if defined(__has_include)
+  #if __has_include(<execution>)
+    #include <execution>
+    #if defined(__cpp_lib_execution) && __cpp_lib_execution >= 201603L
+      #define HAS_EXECUTION_POLICIES 1
+    #endif
+  #endif
+#endif
 
 namespace minimacore::genetic_algorithm {
 
@@ -153,12 +164,20 @@ public:
 
   void run_iteration_callbacks() const
   {
+#ifdef HAS_EXECUTION_POLICIES
     std::for_each(
             std::execution::par_unseq,
             _iteration_callbacks.begin(),
             _iteration_callbacks.end(),
             [](auto& f) { f(); }
     );
+#else
+    std::for_each(
+            _iteration_callbacks.begin(),
+            _iteration_callbacks.end(),
+            [](auto& f) { f(); }
+    );
+#endif
   }
 
   setup(setup&& other) noexcept

@@ -1,0 +1,64 @@
+Checks: |
+  bugprone-*,
+  performance-*,
+  readability-*,
+  modernize-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  -bugprone-easily-swappable-parameters,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-member-init,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  -readability-convert-member-functions-to-static,
+  -readability-magic-numbers,
+  -readability-identifier-length
+  -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard
+HeaderFilterRegex: 'src/.*|include/.*|tests/.*'
+SystemHeaders: false
+FormatStyle: file
+
+WarningsAsErrors: ''
+
+CheckOptions:
+  # ---- Core categories. Adjust to your convention. ----
+  # Types
+  - { key: readability-identifier-naming.TypeCase, value: lower_case }
+  - { key: readability-identifier-naming.EnumCase, value: lower_case }
+  - { key: readability-identifier-naming.EnumConstantCase, value: UPPER_CASE }
+  - { key: readability-identifier-naming.TypeAliasCase, value: lower_case }
+
+  # Functions
+  - { key: readability-identifier-naming.FunctionCase, value: lower_case }
+  - { key: readability-identifier-naming.MethodCase, value: lower_case }
+  - { key: readability-identifier-naming.FactoryFunctionCase, value: lower_case }
+
+  # Variables
+  - { key: readability-identifier-naming.VariableCase, value: lower_case }
+  - { key: readability-identifier-naming.LocalVariableCase, value: lower_case }
+  - { key: readability-identifier-naming.GlobalVariableCase, value: lower_case }
+  - { key: readability-identifier-naming.ParameterCase, value: lower_case }
+
+  # Members (prefix/suffix support)
+  - { key: readability-identifier-naming.MemberCase, value: lower_case }
+  - { key: readability-identifier-naming.PrivateMemberSuffix, value: _ }
+  - { key: readability-identifier-naming.ProtectedMemberSuffix, value: _ }
+
+  # Constants and macros
+  - { key: readability-identifier-naming.ConstantCase, value: lower_case }
+  - { key: readability-identifier-naming.ConstantParameterCase,value: lower_case }
+  - { key: readability-identifier-naming.StaticConstantCase, value: lower_case }
+  - { key: readability-identifier-naming.MacroDefinitionCase, value: UPPER_CASE }
+
+  # Namespaces
+  - { key: readability-identifier-naming.NamespaceCase, value: lower_case }
+
+  # Template parameters
+  - { key: readability-identifier-naming.TemplateParameterCase, value: CamelCase }
+  - { key: readability-identifier-naming.TemplateParameterSuffix, value: _T }  # e.g., Value_T
+
+  # Acronyms handling (optional)
+  - { key: readability-identifier-naming.IgnoreMainLikeFunctions, value: '1' }

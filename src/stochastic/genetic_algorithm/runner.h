@@ -13,12 +13,21 @@
 #include <functional>
 #include <minimacore_concepts.h>
 
+#if defined(__has_include)
+  #if __has_include(<execution>)
+    #include <execution>
+    #if defined(__cpp_lib_execution) && __cpp_lib_execution >= 201603L
+      #define HAS_EXECUTION_POLICIES 1
+    #endif
+  #endif
+#endif
+
 namespace minimacore::genetic_algorithm {
 
 using std::function;
-typedef std::chrono::high_resolution_clock clock_t;
-typedef std::chrono::time_point<clock_t> time_point_t;
-typedef std::chrono::duration<double, std::milli> duration_t;
+using clock_t = std::chrono::high_resolution_clock;
+using time_point_t = std::chrono::time_point<clock_t>;
+using duration_t = std::chrono::duration<double, std::milli>;
 
 template<floating_point_type F>
 class runner {
@@ -116,7 +125,10 @@ public:
     _setup.add_termination(std::make_unique<generation_termination<F>>(_setup.generations()));
     while (
             std::none_of(
+#ifdef HAS_EXECUTION_POLICIES
                     std::execution::par_unseq,
+#endif
+
                     _setup.termination_conditions().begin(),
                     _setup.termination_conditions().end(),
                     [this](auto& condition) { return (*condition)(_statistics); }

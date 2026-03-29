@@ -4,7 +4,7 @@ project(minimacore
         LANGUAGES C CXX
         VERSION ${minimacore_VERSION}
 )
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 include(cmake/fetchDependencies.cmake)
 add_subdirectory(src)

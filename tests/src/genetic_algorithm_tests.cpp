@@ -5,6 +5,7 @@
 #include <runner.h>
 #include <future>
 #include <atomic>
+#include <utility>
 
 using namespace minimacore::genetic_algorithm;
 
